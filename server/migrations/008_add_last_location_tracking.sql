@@ -13,7 +13,7 @@ CREATE INDEX IF NOT EXISTS idx_users_last_location_update
 -- Create alerts table for tracking inactive tourists
 CREATE TABLE IF NOT EXISTS inactive_tourist_alerts (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
   last_known_lat DECIMAL(10, 8),
   last_known_lng DECIMAL(11, 8),
   last_update_time TIMESTAMP,
