@@ -96,6 +96,12 @@ class SocketService {
       console.log('[Socket] Received users:update:', data);
       window.dispatchEvent(new CustomEvent('socketUsersUpdate', { detail: data }));
     });
+
+    // Inactive tourist alerts
+    this.socket.on('tourist:inactive:alert', (data) => {
+      console.log('[Socket] Received tourist:inactive:alert:', data);
+      window.dispatchEvent(new CustomEvent('socketInactiveTouristAlert', { detail: data }));
+    });
   }
 
   registerUser(user) {

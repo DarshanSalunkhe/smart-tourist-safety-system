@@ -159,6 +159,23 @@ export function AuthorityDashboard() {
         updateMainContent(currentView);
       }
     });
+
+    // Listen for inactive tourist alerts
+    window.addEventListener('socketInactiveTouristAlert', (e) => {
+      const alert = e.detail;
+      console.log('[Socket] ⚠️ Inactive tourist alert:', alert);
+      showInactiveAlert(alert);
+      
+      // Add marker to map if on map view
+      if (currentView === 'map' && window.map) {
+        addInactiveMarkerToMap(alert);
+      }
+      
+      // Refresh view
+      if (currentView === 'tourists' || currentView === 'alerts') {
+        updateMainContent(currentView);
+      }
+    });
   }
   
   function listenForLocationUpdates() {
@@ -338,6 +355,81 @@ export function AuthorityDashboard() {
   function showNotification(message, type = 'info') {
     import('../utils/notify.js').then(({ toast }) => toast(message, type));
   }
+
+  function showInactiveAlert(alert) {
+    // Create prominent alert banner
+    const banner = document.createElement('div');
+    banner.className = 'inactive-tourist-banner';
+    banner.innerHTML = `
+      <div class="alert-content">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-details">
+          <strong>INACTIVE TOURIST DETECTED</strong>
+          <p>${alert.userName} - No location update for ${alert.minutesInactive} minutes</p>
+          <p>Last known: ${alert.lastKnownLocation.lat.toFixed(4)}, ${alert.lastKnownLocation.lng.toFixed(4)}</p>
+          <p>Phone: ${alert.userPhone || 'N/A'}</p>
+        </div>
+        <button onclick="viewInactiveTourist(${alert.userId}, ${alert.lastKnownLocation.lat}, ${alert.lastKnownLocation.lng})" class="btn btn-warning btn-sm">
+          View Location
+        </button>
+      </div>
+    `;
+    
+    // Add to top of main content
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      mainContent.insertBefore(banner, mainContent.firstChild);
+      
+      // Auto-remove after 3 minutes
+      setTimeout(() => banner.remove(), 3 * 60 * 1000);
+    }
+    
+    // Show toast notification
+    showNotification(`⚠️ ${alert.userName} inactive for ${alert.minutesInactive} minutes!`, 'warning');
+  }
+
+  function addInactiveMarkerToMap(alert) {
+    if (!window.map) return;
+    
+    const marker = L.marker(
+      [alert.lastKnownLocation.lat, alert.lastKnownLocation.lng],
+      {
+        icon: L.divIcon({
+          className: 'inactive-tourist-marker',
+          html: '<div class="marker-icon">⚠️</div>',
+          iconSize: [40, 40]
+        })
+      }
+    ).addTo(window.map);
+    
+    marker.bindPopup(`
+      <div class="map-popup">
+        <h4>⚠️ Inactive Tourist</h4>
+        <p><strong>${alert.userName}</strong></p>
+        <p>Email: ${alert.userEmail}</p>
+        <p>Phone: ${alert.userPhone || 'N/A'}</p>
+        <p>Last update: ${new Date(alert.lastUpdateTime).toLocaleString()}</p>
+        <p>Inactive for: <strong>${alert.minutesInactive} minutes</strong></p>
+      </div>
+    `).openPopup();
+    
+    // Pan to location
+    window.map.setView([alert.lastKnownLocation.lat, alert.lastKnownLocation.lng], 14);
+  }
+
+  // Global function for button onclick
+  window.viewInactiveTourist = function(userId, lat, lng) {
+    currentView = 'map';
+    updateMainContent('map');
+    
+    // Wait for map to load then pan to location
+    setTimeout(() => {
+      if (window.map) {
+        window.map.setView([lat, lng], 15);
+      }
+    }, 500);
+  };
+
 
   function setupNavigation() {
     document.querySelectorAll('.nav-item').forEach(item => {

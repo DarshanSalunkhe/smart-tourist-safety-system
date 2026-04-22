@@ -805,6 +805,8 @@ export function TouristDashboard() {
   }
 
   function getProfileView() {
+    const photoUrl = user.profile_photo || 'https://via.placeholder.com/150?text=No+Photo';
+    
     return `
       <div class="card">
         <div class="digital-id">
@@ -830,6 +832,34 @@ export function TouristDashboard() {
         </div>
 
         <div style="padding: 1rem 0;">
+          <!-- Profile Photo -->
+          <div class="form-group" style="margin-bottom: 1.5rem; text-align: center;">
+            <label style="font-size: 0.8rem; color: var(--text-light); display: block; margin-bottom: 0.5rem;">
+              📸 Profile Photo
+            </label>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+              <img 
+                id="profilePhotoPreview" 
+                src="${photoUrl}" 
+                alt="Profile" 
+                style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+              />
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+                <label for="profilePhotoInput" class="btn btn-primary btn-sm" style="cursor: pointer;">
+                  📤 Upload Photo
+                </label>
+                <input 
+                  type="file" 
+                  id="profilePhotoInput" 
+                  accept="image/*" 
+                  style="display: none;"
+                />
+                ${user.profile_photo ? '<button id="deletePhotoBtn" class="btn btn-danger btn-sm">🗑️ Remove</button>' : ''}
+              </div>
+              <div id="photoUploadMsg" style="font-size: 0.85rem; display: none;"></div>
+            </div>
+          </div>
+
           <!-- Read-only fields -->
           <div class="form-group" style="margin-bottom: 1rem;">
             <label style="font-size: 0.8rem; color: var(--text-light); display: block; margin-bottom: 0.25rem;">
@@ -911,8 +941,107 @@ export function TouristDashboard() {
     const emergencyDisplay = document.getElementById('profileEmergencyDisplay');
     const phoneInput       = document.getElementById('profilePhone');
     const emergencyInput   = document.getElementById('profileEmergency');
+    
+    // Photo upload elements
+    const photoInput = document.getElementById('profilePhotoInput');
+    const photoPreview = document.getElementById('profilePhotoPreview');
+    const photoMsg = document.getElementById('photoUploadMsg');
+    const deletePhotoBtn = document.getElementById('deletePhotoBtn');
 
     if (!editBtn) return;
+    
+    // Photo upload handler
+    if (photoInput) {
+      photoInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+          showPhotoMsg('❌ File too large. Max 5MB allowed.', 'var(--danger)');
+          return;
+        }
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          showPhotoMsg('❌ Please select an image file.', 'var(--danger)');
+          return;
+        }
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          photoPreview.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        
+        // Upload to server
+        const formData = new FormData();
+        formData.append('photo', file);
+        
+        showPhotoMsg('⏳ Uploading...', 'var(--primary)');
+        
+        try {
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+          const res = await fetch(`${API_URL}/api/profile/upload-photo`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+          });
+          
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Upload failed');
+          }
+          
+          const data = await res.json();
+          user.profile_photo = data.path;
+          localStorage.setItem('user', JSON.stringify(user));
+          
+          showPhotoMsg('✅ Photo uploaded successfully!', 'var(--success)');
+          setTimeout(() => photoMsg.style.display = 'none', 3000);
+          
+          // Refresh view to show delete button
+          setTimeout(() => updateMainContent('id'), 1000);
+        } catch (error) {
+          console.error('[Profile] Photo upload error:', error);
+          showPhotoMsg(`❌ ${error.message}`, 'var(--danger)');
+        }
+      });
+    }
+    
+    // Delete photo handler
+    if (deletePhotoBtn) {
+      deletePhotoBtn.addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to remove your profile photo?')) return;
+        
+        try {
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+          const res = await fetch(`${API_URL}/api/profile/photo`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+          
+          if (!res.ok) throw new Error('Delete failed');
+          
+          user.profile_photo = null;
+          localStorage.setItem('user', JSON.stringify(user));
+          photoPreview.src = 'https://via.placeholder.com/150?text=No+Photo';
+          
+          showPhotoMsg('✅ Photo removed successfully!', 'var(--success)');
+          setTimeout(() => updateMainContent('id'), 1000);
+        } catch (error) {
+          console.error('[Profile] Photo delete error:', error);
+          showPhotoMsg(`❌ ${error.message}`, 'var(--danger)');
+        }
+      });
+    }
+    
+    function showPhotoMsg(text, color) {
+      photoMsg.textContent = text;
+      photoMsg.style.color = color;
+      photoMsg.style.display = 'block';
+    }
 
     function enterEditMode() {
       phoneDisplay.style.display     = 'none';

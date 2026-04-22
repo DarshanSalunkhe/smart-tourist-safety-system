@@ -3835,3 +3835,117 @@ table.incident-table tbody tr.critical:hover {
   background: var(--card);
   border-color: #30363d;
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   INACTIVE TOURIST ALERTS
+   ═══════════════════════════════════════════════════════════ */
+
+.inactive-tourist-banner {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  padding: 1.25rem;
+  border-radius: var(--r-lg);
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+  animation: alertPulse 2s ease-in-out infinite;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+@keyframes alertPulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 30px rgba(245, 158, 11, 0.7);
+  }
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.alert-icon {
+  font-size: 2.5rem;
+  animation: bounce 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.alert-details {
+  flex: 1;
+}
+
+.alert-details strong {
+  display: block;
+  font-size: 1.15rem;
+  margin-bottom: 0.35rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.alert-details p {
+  margin: 0.2rem 0;
+  font-size: 0.9rem;
+  opacity: 0.95;
+  line-height: 1.4;
+}
+
+/* Inactive Tourist Map Marker */
+.inactive-tourist-marker {
+  background: #f59e0b;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.6);
+  animation: markerPulse 2s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes markerPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.6);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 6px 24px rgba(245, 158, 11, 0.9);
+  }
+}
+
+.marker-icon {
+  font-size: 1.5rem;
+  text-align: center;
+  line-height: 40px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .inactive-tourist-banner {
+    padding: 1rem;
+  }
+  
+  .alert-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .alert-icon {
+    font-size: 2rem;
+  }
+  
+  .alert-details strong {
+    font-size: 1rem;
+  }
+  
+  .alert-details p {
+    font-size: 0.85rem;
+  }
+}

@@ -14,6 +14,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const morgan = require('morgan');
 const { pool, initializeDatabase, testConnection } = require('./db');
+const inactiveMonitor = require('./services/inactiveMonitor');
 
 const BCRYPT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'safetrip-jwt-secret-change-in-production';
@@ -182,6 +183,13 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Serve dist folder for production build
 app.use(express.static(path.join(__dirname, '../dist')));
+
+// Serve uploads folder for profile photos
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Profile routes
+const profileRoutes = require('./routes/profile');
+app.use('/api/profile', profileRoutes);
 
 // ============= HELPER FUNCTIONS =============
 
@@ -1248,12 +1256,19 @@ io.on('connection', (socket) => {
          SET location_lat = $1, 
              location_lng = $2, 
              location_timestamp = NOW(), 
-             location_active = true 
+             location_active = true,
+             last_location_update = NOW(),
+             last_known_lat = $1,
+             last_known_lng = $2,
+             location_inactive_alert_sent = false
          WHERE id = $3`,
         [data.location.lat, data.location.lng, data.userId]
       );
       
       console.log('[Socket.IO] DB updated - location_active=true for user:', data.userId);
+      
+      // Resolve any inactive alerts for this user
+      inactiveMonitor.resolveAlert(data.userId);
       
       // Fetch updated user data
       const result = await pool.query('SELECT * FROM users WHERE id = $1', [data.userId]);
@@ -1359,6 +1374,9 @@ async function startServer() {
     await initializeDatabase();
     await seedDemoUsers();
     
+    // Make io globally available for inactive monitor
+    global.io = io;
+    
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log('📡 WebSocket server ready');
@@ -1367,6 +1385,9 @@ async function startServer() {
       console.log(`   Redirect URI: ${REDIRECT_URI}`);
       console.log(`   Frontend URL: ${FRONTEND_URL}`);
       console.log('🗄️  PostgreSQL connected');
+      
+      // Start inactive tourist monitoring
+      inactiveMonitor.start();
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
@@ -1375,3 +1396,22 @@ async function startServer() {
 }
 
 startServer();
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  inactiveMonitor.stop();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('\nSIGINT received, shutting down gracefully...');
+  inactiveMonitor.stop();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
