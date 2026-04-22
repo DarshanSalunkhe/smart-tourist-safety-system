@@ -187,21 +187,29 @@ export function AdminDashboard() {
   }
 
   function initializeRiskZoneMap() {
+    console.log('[AdminDashboard] 🗺️ Initializing risk zone map...');
+    
     // Wait for Leaflet to be available
     if (typeof L === 'undefined') {
-      console.warn('[AdminDashboard] Leaflet not loaded yet, retrying...');
+      console.warn('[AdminDashboard] ⚠️ Leaflet not loaded yet, retrying in 500ms...');
       setTimeout(initializeRiskZoneMap, 500);
       return;
     }
     
+    console.log('[AdminDashboard] ✅ Leaflet is available');
+    
     const mapEl = document.getElementById('riskZoneMap');
     if (!mapEl) {
-      console.warn('[AdminDashboard] Map element not found');
+      console.error('[AdminDashboard] ❌ Map element #riskZoneMap not found in DOM');
       return;
     }
+    
+    console.log('[AdminDashboard] ✅ Map element found:', mapEl);
+    console.log('[AdminDashboard] Map element dimensions:', mapEl.offsetWidth, 'x', mapEl.offsetHeight);
 
     // Remove existing map if any
     if (map) {
+      console.log('[AdminDashboard] Removing existing map instance');
       map.remove();
       map = null;
     }
@@ -209,18 +217,22 @@ export function AdminDashboard() {
     try {
       // Get coordinates for selected location
       const coords = locationDataService.getLocationCoordinates(selectedState, selectedCity);
+      console.log('[AdminDashboard] Location coordinates:', coords);
       
       // Initialize map with selected location
       map = L.map('riskZoneMap').setView([coords.lat, coords.lng], coords.zoom);
+      console.log('[AdminDashboard] ✅ Map instance created');
       
       // Add tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19
       }).addTo(map);
+      console.log('[AdminDashboard] ✅ Tile layer added');
 
       // Add risk zones
       const zones = JSON.parse(localStorage.getItem('riskZones') || '[]');
+      console.log('[AdminDashboard] Risk zones from localStorage:', zones.length);
       
       zones.forEach(zone => {
         const color = zone.risk === 'critical' ? '#ef4444' : zone.risk === 'high' ? '#f59e0b' : zone.risk === 'medium' ? '#fbbf24' : '#10b981';
@@ -237,9 +249,18 @@ export function AdminDashboard() {
         `);
       });
       
-      console.log('[AdminDashboard] Risk zone map initialized successfully');
+      console.log('[AdminDashboard] ✅ Risk zone map initialized successfully with', zones.length, 'zones');
+      
+      // Force map to recalculate size
+      setTimeout(() => {
+        if (map) {
+          map.invalidateSize();
+          console.log('[AdminDashboard] Map size invalidated/refreshed');
+        }
+      }, 100);
     } catch (error) {
-      console.error('[AdminDashboard] Map initialization error:', error);
+      console.error('[AdminDashboard] ❌ Map initialization error:', error);
+      console.error('[AdminDashboard] Error stack:', error.stack);
     }
   }
 
