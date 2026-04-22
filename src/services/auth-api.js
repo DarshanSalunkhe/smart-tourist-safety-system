@@ -251,6 +251,7 @@ class AuthAPIService {
     } catch (error) {
       console.error('[Auth] Logout error:', error);
     } finally {
+      // Clear all user data immediately
       this.currentUser = null;
       this.isLoading = false;
       localStorage.removeItem('user');
@@ -258,9 +259,11 @@ class AuthAPIService {
       sessionStorage.clear();
       // Clear user ID for language preferences
       i18n.clearUserId();
-      console.log('[Auth] Logout complete, redirecting...');
-      window.location.hash = '#/';
-      setTimeout(() => window.location.reload(), 100);
+      console.log('[Auth] Logout complete, redirecting to landing page...');
+      
+      // Force redirect to landing page and reload
+      window.location.href = window.location.origin + window.location.pathname + '#/';
+      window.location.reload();
     }
   }
 

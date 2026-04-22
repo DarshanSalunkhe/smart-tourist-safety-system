@@ -104,7 +104,8 @@ export function initRouter(app) {
       const publicRoutes = ['/', '/login', '/register', '/select-role'];
       
       // Redirect based on role if user is logged in and tries to access landing/login
-      if (user && (hash === '/' || hash === '/login')) {
+      // Only redirect if user is authenticated and has valid session
+      if (user && user.id && (hash === '/' || hash === '/login')) {
         console.log('👤 User already logged in, redirecting to dashboard...');
         if (user.role === 'tourist') window.location.hash = '#/tourist';
         else if (user.role === 'authority') window.location.hash = '#/authority';
