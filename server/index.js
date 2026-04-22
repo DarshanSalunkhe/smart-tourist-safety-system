@@ -814,7 +814,7 @@ app.get('/api/users', requireAuth, async (req, res) => {
   const { role, state, city } = req.query;
   
   try {
-    // Use CASE statement to auto-detect inactive users (no update for 30+ seconds)
+    // Use CASE statement to auto-detect inactive users (no update for 10+ minutes)
     let query = `
       SELECT 
         id, email, name, role, phone, emergency_contact, blockchain_id, picture, 
@@ -823,7 +823,7 @@ app.get('/api/users', requireAuth, async (req, res) => {
         CASE 
           WHEN location_active = true 
             AND location_timestamp IS NOT NULL 
-            AND (NOW() - location_timestamp) < INTERVAL '30 seconds' 
+            AND (NOW() - location_timestamp) < INTERVAL '10 minutes' 
           THEN true
           ELSE false
         END as location_active
