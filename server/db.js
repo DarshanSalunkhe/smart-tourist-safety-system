@@ -107,6 +107,16 @@ async function runMigrations() {
         // Already applied — verify the file hasn't been modified
         const storedChecksum = applied.get(file);
         if (storedChecksum !== checksum) {
+          // Allow force-reset in production via environment variable
+          if (process.env.FORCE_MIGRATION_RESET === 'true') {
+            console.log(`⚠️  Migration checksum mismatch (force-reset enabled): ${file}`);
+            console.log(`   Updating checksum: ${storedChecksum} → ${checksum}`);
+            await client.query(
+              'UPDATE schema_migrations SET checksum = $1 WHERE version = $2',
+              [checksum, file]
+            );
+            continue;
+          }
           throw new Error(
             `Migration tampered: ${file}\n` +
             `  stored checksum : ${storedChecksum}\n` +
