@@ -760,11 +760,11 @@ export function TouristDashboard() {
       <!-- Live Map -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">📍 ${i18n.t('live_tracking')}</h3>
+          <h3 class="card-title">📍 ${i18n.t('live_location')}</h3>
           <div id="trackingBadge">
             ${trackingActive
-              ? `<span style="display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .85rem;background:var(--success);color:#fff;border-radius:var(--r-full);font-size:.78rem;font-weight:600;"><span class="pulse-dot"></span>${i18n.t('live')}</span>`
-              : `<span style="padding:.35rem .85rem;background:var(--text-muted);color:#fff;border-radius:var(--r-full);font-size:.78rem;font-weight:600;">${i18n.t('off')}</span>`}
+              ? `<span style="display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .85rem;background:var(--success);color:#fff;border-radius:var(--r-full);font-size:.78rem;font-weight:600;"><span class="pulse-dot"></span>${i18n.t('live_tracking')}</span>`
+              : `<span style="padding:.35rem .85rem;background:var(--text-muted);color:#fff;border-radius:var(--r-full);font-size:.78rem;font-weight:600;">${i18n.t('tracking_disabled_badge')}</span>`}
           </div>
         </div>
         ${createLocationFilter({ selectedState, selectedCity, inline: true, showLabel: true })}
