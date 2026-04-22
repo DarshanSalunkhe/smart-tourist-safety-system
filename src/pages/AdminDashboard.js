@@ -25,7 +25,7 @@ export function AdminDashboard() {
 
   setTimeout(() => {
     setupNavigation();
-    setupLogout();
+    // setupLogout(); // Removed - now in settings view
     fetchUsers(); // Fetch users on load
     fetchIncidents(); // Fetch incidents on load
     fetchAnalytics(); // Fetch analytics on load
@@ -65,35 +65,122 @@ export function AdminDashboard() {
   
   async function fetchUsers() {
     try {
+      console.log('[AdminDashboard] Fetching users from:', `${API_URL}/api/users`);
       const response = await fetch(`${API_URL}/api/users`, {
         credentials: 'include'
       });
       
+      console.log('[AdminDashboard] Fetch response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
         cachedUsers = data.users || [];
-        console.log('[AdminDashboard] Users fetched from API:', cachedUsers.length);
-        console.log('[AdminDashboard] User details:', cachedUsers.map(u => ({ id: u.id, email: u.email, role: u.role })));
+        console.log('[AdminDashboard] ✅ Users fetched from API:', cachedUsers.length);
+        
+        if (cachedUsers.length > 0) {
+          console.log('[AdminDashboard] User sample:', cachedUsers[0]);
+          console.log('[AdminDashboard] All users:', cachedUsers.map(u => ({ 
+            id: u.id, 
+            name: u.name,
+            email: u.email, 
+            role: u.role 
+          })));
+        } else {
+          console.warn('[AdminDashboard] ⚠️ No users returned from API');
+        }
         
         // Update current view if on users view
         if (currentView === 'users') {
           updateMainContent('users');
         }
       } else {
-        console.error('[AdminDashboard] Failed to fetch users:', response.status);
+        const errorText = await response.text();
+        console.error('[AdminDashboard] ❌ Failed to fetch users:', response.status, errorText);
+        
+        // Show error notification
+        showNotification(`Failed to load users: ${response.status}`, 'error');
       }
     } catch (error) {
-      console.error('[AdminDashboard] Error fetching users:', error);
+      console.error('[AdminDashboard] ❌ Error fetching users:', error);
+      console.error('[AdminDashboard] Error details:', error.message, error.stack);
+      
+      // Show error notification
+      showNotification('Failed to connect to server', 'error');
     }
   }
   
-  function setupLogout() {
-    document.getElementById('adminLogoutBtn')?.addEventListener('click', () => {
-      if (confirm(i18n.t('logout_confirm'))) {
-        authAPIService.logout();
-      }
-    });
+  // setupLogout function removed - now handled in settings view
+
+  function getSettingsView() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return `
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">⚙️ ${i18n.t('settings')}</h3>
+        </div>
+        <div class="card-body">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">🌐 ${i18n.t('language')}</div>
+              <div class="setting-desc">Choose your preferred language</div>
+            </div>
+            <select class="form-control" id="languageSelect" style="width:auto;min-width:150px;">
+              ${LANGUAGE_OPTIONS.map(l =>
+                `<option value="${l.code}" ${i18n.currentLang === l.code ? 'selected' : ''}>${l.label}</option>`
+              ).join('')}
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">🌙 ${i18n.t('dark_mode')}</div>
+              <div class="setting-desc">Toggle dark mode theme</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="darkModeCheck" ${isDark ? 'checked' : ''}>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div style="margin-top:2rem; padding-top:2rem; border-top:1px solid var(--border);">
+            <button class="btn btn-danger btn-full" id="logoutBtn">
+              🚪 ${i18n.t('logout')}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
   }
+
+  function setupSettingsHandlers() {
+    const langSelect = document.getElementById('languageSelect');
+    if (langSelect) {
+      langSelect.addEventListener('change', (e) => {
+        i18n.setLanguage(e.target.value);
+        showNotification('Language changed successfully', 'success');
+        setTimeout(() => location.reload(), 500);
+      });
+    }
+
+    const darkModeCheck = document.getElementById('darkModeCheck');
+    if (darkModeCheck) {
+      darkModeCheck.addEventListener('change', (e) => {
+        document.documentElement.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
+        localStorage.setItem('theme', e.target.checked ? 'dark' : 'light');
+        showNotification(`${e.target.checked ? 'Dark' : 'Light'} mode enabled`, 'success');
+      });
+    }
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        if (confirm(i18n.t('logout_confirm'))) {
+          authAPIService.logout();
+        }
+      });
+    }
+  }
+
   
   function showNotification(message, type = 'info') {
     import('../utils/notify.js').then(({ toast }) => toast(message, type));
@@ -222,6 +309,10 @@ export function AdminDashboard() {
     else if (view === 'health')    viewHtml = getSystemHealthView();
     else if (view === 'logs')  viewHtml = getLogsView();
     else if (view === 'demo')  viewHtml = getDemoModeView();
+    else if (view === 'settings') {
+      viewHtml = getSettingsView();
+      setTimeout(() => setupSettingsHandlers(), 0);
+    }
 
     content.innerHTML = tabBar + viewHtml;
 
@@ -244,6 +335,8 @@ export function AdminDashboard() {
   function getUsersView() {
     const allUsers = cachedUsers; // Use cached users from API
     
+    console.log('[AdminDashboard] Rendering users view, cached users:', allUsers.length);
+    
     // Filter users by location if selected with case-insensitive comparison
     const users = selectedState === 'all' 
       ? allUsers 
@@ -254,6 +347,8 @@ export function AdminDashboard() {
           }
           return stateMatch && normalize(u.city) === normalize(selectedCity);
         });
+    
+    console.log('[AdminDashboard] Filtered users:', users.length);
     
     const tourists = users.filter(u => u.role === 'tourist');
     const authorities = users.filter(u => u.role === 'authority');
@@ -1022,13 +1117,10 @@ export function AdminDashboard() {
           <div class="nav-item" data-view="logs">
             <span class="nav-item-icon">📋</span> ${i18n.t('system_logs')}
           </div>
+          <div class="nav-item" data-view="settings">
+            <span class="nav-item-icon">⚙️</span> ${i18n.t('settings')}
+          </div>
         </nav>
-        
-        <div class="sidebar-footer">
-          <button class="btn btn-danger btn-sm" id="adminLogoutBtn" style="width:100%;">
-            🚪 ${i18n.t('logout')}
-          </button>
-        </div>
       </aside>
       
       <main class="main-content" id="mainContent">
