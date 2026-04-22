@@ -150,10 +150,6 @@ export function TouristDashboard() {
       console.warn('[TouristDashboard] SMS Fallback button not found');
     }
 
-    const logoutBtn = document.getElementById('sidebarLogoutBtn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', handleLogout);
-    }
     console.log('[TouristDashboard] Global buttons initialized');
   }
 
@@ -726,7 +722,7 @@ export function TouristDashboard() {
                 <span class="slider"></span>
               </label>
               <div id="trackingStatusText" style="font-size:.7rem;color:${trackingActive ? 'var(--success)' : 'var(--text-muted)'};margin-top:.2rem;text-align:center;">
-                ${trackingActive ? '📍 Live' : '📍 Off'}
+                ${trackingActive ? '📍 Active' : '📍 Off'}
               </div>
             </div>
           </div>
@@ -764,7 +760,7 @@ export function TouristDashboard() {
       <!-- Live Map -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">📍 ${i18n.t('live_location')}</h3>
+          <h3 class="card-title">📍 ${i18n.t('live_tracking')}</h3>
           <div id="trackingBadge">
             ${trackingActive
               ? `<span style="display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .85rem;background:var(--success);color:#fff;border-radius:var(--r-full);font-size:.78rem;font-weight:600;"><span class="pulse-dot"></span>${i18n.t('live')}</span>`
@@ -824,8 +820,8 @@ export function TouristDashboard() {
       </div>
 
       <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">👤 ${i18n.t('my_profile')}</h3>
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 class="card-title" style="margin: 0;">👤 ${i18n.t('my_profile')}</h3>
           <button id="profileEditBtn" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.4rem 1rem;">
             ✏️ ${i18n.t('edit')}
           </button>
@@ -1686,15 +1682,6 @@ export function TouristDashboard() {
             <span class="nav-item-icon">⚙️</span> ${i18n.t('settings')}
           </div>
         </nav>
-        
-        <div class="sidebar-footer">
-          <button id="langToggle" class="btn btn-ghost" style="width:100%; font-size:0.82rem; color: var(--sidebar-text); border-color: rgba(255,255,255,.1);">
-            🌐 ${LANGUAGE_OPTIONS.find(l => l.code === i18n.currentLang)?.label || 'English'}
-          </button>
-          <button id="sidebarLogoutBtn" class="btn btn-danger btn-sm" style="width:100%;">
-            🚪 ${i18n.t('logout')}
-          </button>
-        </div>
       </aside>
       
       <main class="main-content" id="mainContent">

@@ -2070,8 +2070,8 @@ tr:hover td {
 /* -- CHATBOT FAB ENHANCEMENT ------------------------------ */
 .chatbot-fab {
   position: fixed;
-  bottom: 96px;
-  right: 22px;
+  bottom: 104px;
+  right: 2rem;
   width: 62px;
   height: 62px;
   border-radius: 50%;
@@ -2126,7 +2126,7 @@ tr:hover td {
     width: 56px;
     height: 56px;
     font-size: 1.3rem;
-    bottom: 88px;
+    bottom: 96px;
     right: 1.5rem;
   }
 }
@@ -3947,5 +3947,56 @@ table.incident-table tbody tr.critical:hover {
   
   .alert-details p {
     font-size: 0.85rem;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   SETTINGS PAGE
+   ═══════════════════════════════════════════════════════════ */
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border);
+  gap: 1rem;
+}
+
+.setting-row:last-child {
+  border-bottom: none;
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.setting-desc {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .setting-row {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem 0;
+  }
+  
+  .setting-row select,
+  .setting-row .switch {
+    align-self: flex-end;
   }
 }
