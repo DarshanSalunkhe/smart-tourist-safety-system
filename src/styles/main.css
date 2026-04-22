@@ -2643,9 +2643,17 @@ tr:hover td {
     width: auto;
   }
   .sidebar-header,
-  .sidebar-user,
-  .sidebar-footer {
+  .sidebar-user {
     display: none;
+  }
+  .sidebar-footer {
+    width: 100%;
+    padding: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    justify-content: center;
   }
   .main-content {
     padding: 1rem 0.75rem;
