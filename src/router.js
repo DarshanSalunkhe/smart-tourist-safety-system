@@ -52,6 +52,39 @@ export function initRouter(app) {
       const hash = window.location.hash.slice(1) || '/';
       console.log('🗺️ Navigating to:', hash);
       
+      // Extract OAuth tokens from URL if present
+      const urlParams = new URLSearchParams(hash.split('?')[1]);
+      const token = urlParams.get('token');
+      const refresh = urlParams.get('refresh');
+      
+      if (token && refresh) {
+        console.log('🔑 OAuth tokens found in URL, storing...');
+        localStorage.setItem('st_access_token', token);
+        localStorage.setItem('st_refresh_token', refresh);
+        
+        // Fetch user data with the new token
+        const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5000';
+        fetch(`${API_URL}/auth/user`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          credentials: 'include'
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.user) {
+            localStorage.setItem('user', JSON.stringify(data.user));
+            authAPIService.currentUser = data.user;
+            console.log('✅ User data loaded from OAuth');
+          }
+          // Clean URL by removing tokens
+          const cleanHash = hash.split('?')[0];
+          window.location.hash = '#' + cleanHash;
+        })
+        .catch(err => {
+          console.error('❌ Failed to load user data:', err);
+        });
+        return;
+      }
+      
       // Cleanup previous page before navigating
       if (currentPage && currentPage !== hash) {
         cleanupCurrentPage();

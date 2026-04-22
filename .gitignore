@@ -1,9 +1,12 @@
 node_modules/
 dist/
 .env
+.env.*
 *.log
 .DS_Store
 .vscode/
 coverage/
 server/google-oauth.json
 PRODUCTION_VALUES_COPY_PASTE.md
+RENDER_ENV_*.txt
+*_ENV_*.txt

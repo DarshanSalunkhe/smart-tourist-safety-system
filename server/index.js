@@ -143,15 +143,27 @@ app.use(session({
   resave: true,
   saveUninitialized: true,
   cookie: {
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: 'lax'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? undefined : undefined
   },
-  rolling: true
+  rolling: true,
+  proxy: process.env.NODE_ENV === 'production'
 }));
 
 // ============= HEALTH CHECK =============
+
+// Root route for Render health checks (HEAD and GET)
+app.get('/', (req, res) => {
+  res.json({
+    service: 'SafeTrip API',
+    status: 'running',
+    version: '1.0.0',
+    uptime: Math.floor(process.uptime()) + 's'
+  });
+});
 
 app.get('/health', (req, res) => {
   res.json({
@@ -304,23 +316,20 @@ app.get('/auth/google/callback', async (req, res) => {
         [googleId, picture, 'google', user.id]
       );
       
+      // Generate JWT tokens for cross-domain auth
+      const { accessToken, refreshToken } = signTokens(user.id, user.role);
+      
+      // Also set session for backward compatibility
       req.session.userId = user.id;
       req.session.user = user;
       
-      req.session.save((err) => {
-        if (err) {
-          console.error('[OAuth] Session save error:', err);
-          return res.redirect(`${FRONTEND_URL}/#/login?error=session_failed`);
-        }
-        
-        console.log('[OAuth] Session saved successfully for user:', user.email);
-        
-        const dashboardRoute = user.role === 'tourist' ? 'tourist' : 
-                              user.role === 'authority' ? 'authority' : 'admin';
-        
-        console.log('[OAuth] Redirecting to:', dashboardRoute);
-        res.redirect(`${FRONTEND_URL}/#/${dashboardRoute}`);
-      });
+      const dashboardRoute = user.role === 'tourist' ? 'tourist' : 
+                            user.role === 'authority' ? 'authority' : 'admin';
+      
+      console.log('[OAuth] Redirecting to:', dashboardRoute, 'with tokens');
+      
+      // Redirect with tokens in URL (will be extracted by frontend and stored)
+      res.redirect(`${FRONTEND_URL}/#/${dashboardRoute}?token=${accessToken}&refresh=${refreshToken}`);
     } else {
       console.log('[OAuth] New user, storing pending data');
       req.session.pendingGoogleUser = {
