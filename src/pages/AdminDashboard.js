@@ -327,7 +327,15 @@ export function AdminDashboard() {
 
     // View-specific setup
     if (view === 'users')  { setupUserHandlers(); setupLocationFilterHandlers(handleLocationChange, handleLocationChange); }
-    if (view === 'zones')  { setupZoneHandlers(); setupLocationFilterHandlers(handleLocationChange, handleLocationChange); }
+    if (view === 'zones')  { 
+      setupZoneHandlers(); 
+      setupLocationFilterHandlers(handleLocationChange, handleLocationChange);
+      // Initialize map after DOM is ready
+      setTimeout(() => {
+        console.log('[AdminDashboard] Initializing risk zone map...');
+        initializeRiskZoneMap();
+      }, 200);
+    }
     if (view === 'analytics') setupLocationFilterHandlers(handleLocationChange, handleLocationChange);
     if (view === 'demo')   setupDemoHandlers();
   }
@@ -969,12 +977,40 @@ export function AdminDashboard() {
   };
 
   function getLogsView() {
-    const logs = [
-      { time: new Date().toISOString(), action: 'User Login', user: 'tourist@demo.com', status: 'success' },
-      { time: new Date(Date.now() - 300000).toISOString(), action: 'Incident Created', user: 'System', status: 'info' },
-      { time: new Date(Date.now() - 600000).toISOString(), action: 'Risk Zone Added', user: 'admin@demo.com', status: 'success' },
-      { time: new Date(Date.now() - 900000).toISOString(), action: 'SOS Triggered', user: 'tourist@demo.com', status: 'critical' }
-    ];
+    // Fetch real logs from incidents and user activities
+    const incidents = incidentService.getIncidents();
+    const users = cachedUsers;
+    
+    // Create logs from recent incidents
+    const logs = [];
+    
+    // Add incident logs
+    incidents.slice(0, 20).forEach(inc => {
+      const user = users.find(u => u.id === inc.user_id);
+      logs.push({
+        time: inc.created_at,
+        action: `${inc.type.toUpperCase()} Incident`,
+        user: user ? user.email : 'Unknown User',
+        status: inc.severity === 'critical' ? 'critical' : inc.severity === 'high' ? 'warning' : 'info'
+      });
+    });
+    
+    // Add user login logs (from localStorage if available)
+    const recentLogins = JSON.parse(localStorage.getItem('recentLogins') || '[]');
+    recentLogins.forEach(login => {
+      logs.push({
+        time: login.timestamp,
+        action: 'User Login',
+        user: login.email,
+        status: 'success'
+      });
+    });
+    
+    // Sort by time (most recent first)
+    logs.sort((a, b) => new Date(b.time) - new Date(a.time));
+    
+    // Take only the most recent 50 logs
+    const recentLogs = logs.slice(0, 50);
 
     return `
       <div class="card">
@@ -983,30 +1019,51 @@ export function AdminDashboard() {
           <button class="btn btn-primary" onclick="location.reload()">Refresh</button>
         </div>
         
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="border-bottom: 2px solid var(--border);">
-              <th style="padding: 0.75rem; text-align: left;">Timestamp</th>
-              <th style="padding: 0.75rem; text-align: left;">Action</th>
-              <th style="padding: 0.75rem; text-align: left;">User</th>
-              <th style="padding: 0.75rem; text-align: left;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${logs.map(log => `
-              <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 0.75rem;">${formatToIST(log.time)}</td>
-                <td style="padding: 0.75rem;">${log.action}</td>
-                <td style="padding: 0.75rem;">${log.user}</td>
-                <td style="padding: 0.75rem;">
-                  <span style="color: ${log.status === 'critical' ? 'var(--danger)' : log.status === 'success' ? 'var(--success)' : 'var(--primary)'};">
-                    ${log.status}
-                  </span>
-                </td>
+        <div style="margin: 1rem; padding: 0.75rem; background: var(--bg); border-radius: 0.5rem; border: 1px solid var(--border);">
+          <p style="margin: 0; font-size: 0.85rem; color: var(--text-light);">
+            Showing ${recentLogs.length} most recent system events
+          </p>
+        </div>
+        
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border); background: var(--bg);">
+                <th style="padding: 0.75rem; text-align: left;">Timestamp</th>
+                <th style="padding: 0.75rem; text-align: left;">Action</th>
+                <th style="padding: 0.75rem; text-align: left;">User</th>
+                <th style="padding: 0.75rem; text-align: left;">Status</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${recentLogs.length > 0 ? recentLogs.map(log => `
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 0.75rem; font-size: 0.85rem;">${formatToIST(log.time)}</td>
+                  <td style="padding: 0.75rem; font-weight: 500;">${log.action}</td>
+                  <td style="padding: 0.75rem; font-size: 0.85rem;">${log.user}</td>
+                  <td style="padding: 0.75rem;">
+                    <span style="
+                      padding: 0.25rem 0.5rem; 
+                      border-radius: 0.25rem; 
+                      font-size: 0.75rem; 
+                      font-weight: 600;
+                      background: ${log.status === 'critical' ? 'var(--danger-light)' : log.status === 'warning' ? 'var(--warning-light)' : log.status === 'success' ? 'var(--success-light)' : 'var(--primary-light)'};
+                      color: ${log.status === 'critical' ? 'var(--danger)' : log.status === 'warning' ? 'var(--warning)' : log.status === 'success' ? 'var(--success)' : 'var(--primary)'};
+                    ">
+                      ${log.status}
+                    </span>
+                  </td>
+                </tr>
+              `).join('') : `
+                <tr>
+                  <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-light);">
+                    No system logs available. Logs will appear as users interact with the system.
+                  </td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
       </div>
     `;
   }
