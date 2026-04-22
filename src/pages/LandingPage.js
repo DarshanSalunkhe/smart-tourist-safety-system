@@ -1,4 +1,43 @@
+import { authAPIService } from '../services/auth-api.js';
+
 export function LandingPage() {
+  const user = authAPIService.getCurrentUser();
+  
+  // Determine navigation buttons based on login status
+  const navButtons = user ? `
+    <button class="btn-nav-secondary" onclick="location.hash='#/${user.role}'">Go to Dashboard</button>
+    <button class="btn-nav-primary" onclick="authAPIService.logout()">Logout</button>
+  ` : `
+    <button class="btn-nav-secondary" onclick="location.hash='#/login'">Login</button>
+    <button class="btn-nav-primary" onclick="location.hash='#/register'">Sign Up</button>
+  `;
+  
+  // Determine hero action buttons based on login status
+  const heroButtons = user ? `
+    <button class="btn-hero-primary" onclick="location.hash='#/${user.role}'">
+      Go to Dashboard
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  ` : `
+    <button class="btn-hero-primary" onclick="location.hash='#/register'">
+      Get Started
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="btn-hero-secondary" onclick="location.hash='#/login'">Login</button>
+  `;
+  
+  // Determine CTA buttons based on login status
+  const ctaButtons = user ? `
+    <button class="btn-cta-primary" onclick="location.hash='#/${user.role}'">Go to Dashboard</button>
+  ` : `
+    <button class="btn-cta-primary" onclick="location.hash='#/register'">Create Account</button>
+    <button class="btn-cta-secondary" onclick="location.hash='#/login'">Login</button>
+  `;
+  
   return `
     <div class="landing-page">
       <!-- Header / Navbar -->
@@ -9,8 +48,7 @@ export function LandingPage() {
             <span class="landing-brand-text">SafeTrip Companion</span>
           </div>
           <div class="landing-nav-actions">
-            <button class="btn-nav-secondary" onclick="location.hash='#/login'">Login</button>
-            <button class="btn-nav-primary" onclick="location.hash='#/register'">Sign Up</button>
+            ${navButtons}
           </div>
         </div>
       </nav>
@@ -22,13 +60,7 @@ export function LandingPage() {
             <h1 class="landing-hero-title">Your AI-Powered Safety Companion</h1>
             <p class="landing-hero-subtitle">Real-time alerts, emergency support, and smart travel guidance wherever you go.</p>
             <div class="landing-hero-actions">
-              <button class="btn-hero-primary" onclick="location.hash='#/register'">
-                Get Started
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-              <button class="btn-hero-secondary" onclick="location.hash='#/login'">Login</button>
+              ${heroButtons}
             </div>
           </div>
           <div class="landing-hero-visual">
@@ -122,8 +154,7 @@ export function LandingPage() {
         <div class="landing-cta-content">
           <h2 class="landing-cta-title">Start Safe. Travel Smart.</h2>
           <div class="landing-cta-actions">
-            <button class="btn-cta-primary" onclick="location.hash='#/register'">Create Account</button>
-            <button class="btn-cta-secondary" onclick="location.hash='#/login'">Login</button>
+            ${ctaButtons}
           </div>
         </div>
       </section>

@@ -103,15 +103,8 @@ export function initRouter(app) {
       // Public routes that don't require authentication
       const publicRoutes = ['/', '/login', '/register', '/select-role'];
       
-      // Redirect based on role if user is logged in and tries to access landing/login
-      // Only redirect if user is authenticated and has valid session
-      if (user && user.id && (hash === '/' || hash === '/login')) {
-        console.log('👤 User already logged in, redirecting to dashboard...');
-        if (user.role === 'tourist') window.location.hash = '#/tourist';
-        else if (user.role === 'authority') window.location.hash = '#/authority';
-        else if (user.role === 'admin') window.location.hash = '#/admin';
-        return;
-      }
+      // Allow landing page and login to be accessed even when logged in
+      // Users can manually navigate to their dashboard from the landing page
       
       // Redirect to landing if trying to access protected route without authentication
       if (!user && !publicRoutes.includes(hash)) {
