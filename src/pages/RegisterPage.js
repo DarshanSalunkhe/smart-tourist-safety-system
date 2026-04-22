@@ -13,12 +13,17 @@ export function RegisterPage() {
       submitBtn.classList.add('loading');
       submitBtn.textContent = i18n.t('loading');
       
+      const phoneCountry = document.getElementById('phoneCountry').value;
+      const phoneNumber = document.getElementById('phone').value.replace(/^0+/, '');
+      const emergencyCountry = document.getElementById('emergencyCountry').value;
+      const emergencyNumber = document.getElementById('emergencyContact').value.replace(/^0+/, '');
+      
       const userData = {
         name: document.getElementById('name').value,
         email: document.getElementById('email').value,
         password: document.getElementById('password').value,
-        phone: document.getElementById('phone').value,
-        emergencyContact: document.getElementById('emergencyContact').value,
+        phone: phoneCountry + phoneNumber,
+        emergencyContact: emergencyCountry + emergencyNumber,
         role: document.getElementById('role').value
       };
       
@@ -85,11 +90,57 @@ export function RegisterPage() {
           <div class="form-row">
             <div class="form-group">
               <label for="phone">Phone</label>
-              <input type="tel" id="phone" class="form-control" placeholder="+91-XXXXXXXXXX" required>
+              <div style="display: flex; gap: 0.5rem;">
+                <select id="phoneCountry" class="form-control" style="flex: 0 0 120px; font-size: 0.9rem;">
+                  <option value="+91">🇮🇳 +91</option>
+                  <option value="+1">🇺🇸 +1</option>
+                  <option value="+44">🇬🇧 +44</option>
+                  <option value="+971">🇦🇪 +971</option>
+                  <option value="+61">🇦🇺 +61</option>
+                  <option value="+65">🇸🇬 +65</option>
+                  <option value="+60">🇲🇾 +60</option>
+                  <option value="+66">🇹🇭 +66</option>
+                  <option value="+81">🇯🇵 +81</option>
+                  <option value="+86">🇨🇳 +86</option>
+                  <option value="+82">🇰🇷 +82</option>
+                  <option value="+49">🇩🇪 +49</option>
+                  <option value="+33">🇫🇷 +33</option>
+                  <option value="+34">🇪🇸 +34</option>
+                  <option value="+39">🇮🇹 +39</option>
+                  <option value="+55">🇧🇷 +55</option>
+                  <option value="+52">🇲🇽 +52</option>
+                  <option value="+27">🇿🇦 +27</option>
+                  <option value="+20">🇪🇬 +20</option>
+                </select>
+                <input type="tel" id="phone" class="form-control" placeholder="XXXXXXXXXX" required style="flex: 1;">
+              </div>
             </div>
             <div class="form-group">
               <label for="emergencyContact">Emergency contact</label>
-              <input type="tel" id="emergencyContact" class="form-control" placeholder="+91-XXXXXXXXXX" required>
+              <div style="display: flex; gap: 0.5rem;">
+                <select id="emergencyCountry" class="form-control" style="flex: 0 0 120px; font-size: 0.9rem;">
+                  <option value="+91">🇮🇳 +91</option>
+                  <option value="+1">🇺🇸 +1</option>
+                  <option value="+44">🇬🇧 +44</option>
+                  <option value="+971">🇦🇪 +971</option>
+                  <option value="+61">🇦🇺 +61</option>
+                  <option value="+65">🇸🇬 +65</option>
+                  <option value="+60">🇲🇾 +60</option>
+                  <option value="+66">🇹🇭 +66</option>
+                  <option value="+81">🇯🇵 +81</option>
+                  <option value="+86">🇨🇳 +86</option>
+                  <option value="+82">🇰🇷 +82</option>
+                  <option value="+49">🇩🇪 +49</option>
+                  <option value="+33">🇫🇷 +33</option>
+                  <option value="+34">🇪🇸 +34</option>
+                  <option value="+39">🇮🇹 +39</option>
+                  <option value="+55">🇧🇷 +55</option>
+                  <option value="+52">🇲🇽 +52</option>
+                  <option value="+27">🇿🇦 +27</option>
+                  <option value="+20">🇪🇬 +20</option>
+                </select>
+                <input type="tel" id="emergencyContact" class="form-control" placeholder="XXXXXXXXXX" required style="flex: 1;">
+              </div>
             </div>
           </div>
 
