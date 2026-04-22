@@ -1958,8 +1958,8 @@ tr:hover td {
   cursor: pointer;
   z-index: 1000;
   box-shadow:
-    0 6px 24px rgba(239, 68, 68, 0.5),
-    0 2px 8px rgba(0, 0, 0, 0.2);
+    0 4px 16px rgba(239, 68, 68, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.2);
   animation: sosPulse 2.5s ease-in-out infinite;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -1970,25 +1970,25 @@ tr:hover td {
 .sos-button::before {
   content: "";
   position: absolute;
-  inset: -4px;
+  inset: -2px;
   border-radius: 50%;
   background: linear-gradient(
     135deg,
-    rgba(239, 68, 68, 0.3),
-    rgba(220, 38, 38, 0.3)
+    rgba(239, 68, 68, 0.2),
+    rgba(220, 38, 38, 0.2)
   );
   z-index: -1;
   animation: sosRing 2.5s ease-in-out infinite;
 }
 .sos-button:hover {
-  transform: scale(1.12);
+  transform: scale(1.08);
   box-shadow:
-    0 8px 32px rgba(239, 68, 68, 0.65),
-    0 4px 12px rgba(0, 0, 0, 0.3);
+    0 6px 20px rgba(239, 68, 68, 0.5),
+    0 3px 10px rgba(0, 0, 0, 0.3);
 }
 .sos-button:active {
-  transform: scale(1.05);
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.5);
+  transform: scale(1.02);
+  box-shadow: 0 3px 12px rgba(239, 68, 68, 0.4);
 }
 .sos-button:disabled {
   opacity: 0.6;
@@ -2002,25 +2002,25 @@ tr:hover td {
   0%,
   100% {
     box-shadow:
-      0 6px 24px rgba(239, 68, 68, 0.5),
-      0 2px 8px rgba(0, 0, 0, 0.2),
-      0 0 0 0 rgba(239, 68, 68, 0.4);
+      0 4px 16px rgba(239, 68, 68, 0.4),
+      0 2px 6px rgba(0, 0, 0, 0.2),
+      0 0 0 0 rgba(239, 68, 68, 0.3);
   }
   50% {
     box-shadow:
-      0 6px 24px rgba(239, 68, 68, 0.5),
-      0 2px 8px rgba(0, 0, 0, 0.2),
-      0 0 0 16px rgba(239, 68, 68, 0);
+      0 4px 16px rgba(239, 68, 68, 0.4),
+      0 2px 6px rgba(0, 0, 0, 0.2),
+      0 0 0 8px rgba(239, 68, 68, 0);
   }
 }
 @keyframes sosRing {
   0%,
   100% {
     transform: scale(1);
-    opacity: 0.6;
+    opacity: 0.4;
   }
   50% {
-    transform: scale(1.15);
+    transform: scale(1.08);
     opacity: 0;
   }
 }
@@ -2030,32 +2030,32 @@ tr:hover td {
   position: fixed;
   bottom: 104px;
   right: 20px;
-  width: 62px;
-  height: 62px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
   z-index: 1001;
   background: linear-gradient(135deg, #7c3aed, #2563eb);
   color: #fff;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   box-shadow:
-    0 6px 24px rgba(124, 58, 237, 0.45),
-    0 2px 8px rgba(0, 0, 0, 0.2);
+    0 4px 16px rgba(124, 58, 237, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.2);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .chatbot-fab:hover {
-  transform: scale(1.12) rotate(5deg);
+  transform: scale(1.08) rotate(5deg);
   box-shadow:
-    0 8px 32px rgba(124, 58, 237, 0.6),
-    0 4px 12px rgba(0, 0, 0, 0.3);
+    0 6px 20px rgba(124, 58, 237, 0.5),
+    0 3px 10px rgba(0, 0, 0, 0.3);
 }
 .chatbot-fab:active {
-  transform: scale(1.05);
-  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.5);
+  transform: scale(1.02);
+  box-shadow: 0 3px 12px rgba(124, 58, 237, 0.4);
 }
 
 /* -- RESPONSIVE QUICK ACTIONS ----------------------------- */
@@ -2074,17 +2074,17 @@ tr:hover td {
     font-size: 0.75rem;
   }
   .sos-button {
-    width: 62px;
-    height: 62px;
+    width: 64px;
+    height: 64px;
     font-size: 0.7rem;
     bottom: 20px;
     right: 20px;
   }
   .chatbot-fab {
-    width: 56px;
-    height: 56px;
-    font-size: 1.3rem;
-    bottom: 96px;
+    width: 64px;
+    height: 64px;
+    font-size: 1.4rem;
+    bottom: 98px;
     right: 20px;
   }
 }
