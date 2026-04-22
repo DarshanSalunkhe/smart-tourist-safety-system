@@ -42,8 +42,8 @@ router.post('/upload-photo', upload.single('photo'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Get user ID from session or JWT
-    const userId = req.session?.userId || req.userId;
+    // Get user ID from multiple sources: session, JWT, or request body
+    const userId = req.session?.userId || req.userId || req.body.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
@@ -95,7 +95,8 @@ router.get('/photo/:userId', async (req, res) => {
 // Delete profile photo
 router.delete('/photo', async (req, res) => {
   try {
-    const userId = req.session?.userId || req.userId;
+    // Get user ID from multiple sources: session, JWT, query param, or request body
+    const userId = req.session?.userId || req.userId || req.query.userId || req.body.userId;
     
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });

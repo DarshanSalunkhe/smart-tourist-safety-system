@@ -974,6 +974,7 @@ export function TouristDashboard() {
         // Upload to server
         const formData = new FormData();
         formData.append('photo', file);
+        formData.append('userId', user.id); // Add userId to form data
         
         showPhotoMsg('⏳ Uploading...', 'var(--primary)');
         
@@ -1013,7 +1014,7 @@ export function TouristDashboard() {
         
         try {
           const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-          const res = await fetch(`${API_URL}/api/profile/photo`, {
+          const res = await fetch(`${API_URL}/api/profile/photo?userId=${user.id}`, {
             method: 'DELETE',
             credentials: 'include'
           });
