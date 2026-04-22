@@ -2331,6 +2331,7 @@ tr:hover td {
   color: var(--text-light);
   font-size: 0.75rem;
   margin-top: 0.15rem;
+  line-height: 1.4;
 }
 .alert-rail-item .rail-dispatch {
   margin-top: 0.4rem;

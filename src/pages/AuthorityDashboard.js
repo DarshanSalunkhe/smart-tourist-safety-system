@@ -26,7 +26,7 @@ export function AuthorityDashboard() {
     initializeMap();
     setupNavigation();
     listenForIncidents();
-    setupLogout();
+    // setupLogout(); // Removed - now in settings view
     listenForLocationUpdates();
     listenForSOSAlerts();
     listenForSocketUpdates();
@@ -344,13 +344,8 @@ export function AuthorityDashboard() {
     }
   }
   
-  function setupLogout() {
-    document.getElementById('authorityLogoutBtn')?.addEventListener('click', () => {
-      if (confirm(i18n.t('logout_confirm'))) {
-        authAPIService.logout();
-      }
-    });
-  }
+  // setupLogout function removed - now handled in settings view
+
   
   function showNotification(message, type = 'info') {
     import('../utils/notify.js').then(({ toast }) => toast(message, type));
@@ -694,6 +689,10 @@ export function AuthorityDashboard() {
     } else if (view === 'analytics') {
       content.innerHTML = getAnalyticsView();
       setupLocationFilterHandlers(handleLocationChange, handleLocationChange);
+    } else if (view === 'settings') {
+      content.innerHTML = getSettingsView();
+      setupSettingsHandlers();
+    }
     }
 
     // Wire demo button on every view render
@@ -821,19 +820,32 @@ export function AuthorityDashboard() {
                   <div class="empty-state-title">All clear</div>
                   <div class="empty-state-desc">No active incidents</div>
                 </div>` :
-                incidents.slice(0, 20).map(inc => `
+                incidents.slice(0, 20).map(inc => {
+                  const userName = inc.user_name || 'Unknown Tourist';
+                  const location = inc.city || inc.state || 'Unknown Location';
+                  const timestamp = inc.created_at ? formatTimeIST(inc.created_at) : 'Just now';
+                  const coords = inc.location_lat && inc.location_lng 
+                    ? `${inc.location_lat.toFixed(4)}, ${inc.location_lng.toFixed(4)}`
+                    : '';
+                  
+                  return `
                   <div class="alert-rail-item ${inc.severity === 'critical' ? 'critical' : inc.severity === 'high' ? 'high' : ''} ${inc.status === 'resolved' ? 'resolved' : ''}">
-                    <div class="rail-type">${inc.type.toUpperCase()} · ${inc.severity}</div>
-                    <div class="rail-meta">${inc.user_name || 'Tourist'} · ${inc.city || inc.state || '—'}</div>
+                    <div class="rail-type">${inc.type.toUpperCase()} · ${inc.severity.toUpperCase()}</div>
+                    <div class="rail-meta">
+                      <strong>${userName}</strong><br>
+                      📍 ${location}${coords ? ` (${coords})` : ''}<br>
+                      🕐 ${timestamp}
+                    </div>
                     ${inc.dispatchSuggestions?.length ? `
                       <div class="rail-dispatch">🤖 ${inc.dispatchSuggestions[0]}</div>` : ''}
                     ${inc.status !== 'resolved' ? `
-                      <div style="margin-top:.4rem;display:flex;gap:.3rem;">
-                        <button class="btn btn-sm btn-success start-progress-btn" data-id="${inc.id}" style="flex:1;font-size:.7rem;padding:.25rem .5rem;">
+                      <div style="margin-top:.5rem;display:flex;gap:.3rem;">
+                        <button class="btn btn-sm btn-success start-progress-btn" data-id="${inc.id}" style="flex:1;font-size:.7rem;padding:.3rem .5rem;">
                           ${inc.status === 'new' ? '▶ Start' : '✓ Resolve'}
                         </button>
                       </div>` : ''}
-                  </div>`).join('')}
+                  </div>`;
+                }).join('')}
             </div>
           </div>
         </div>
@@ -1504,6 +1516,90 @@ export function AuthorityDashboard() {
     });
   }
 
+  function getSettingsView() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return `
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">⚙️ ${i18n.t('settings')}</h3>
+        </div>
+        <div class="card-body">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">🌐 ${i18n.t('language')}</div>
+              <div class="setting-desc">Choose your preferred language</div>
+            </div>
+            <select class="form-control" id="languageSelect" style="width:auto;min-width:150px;">
+              ${LANGUAGE_OPTIONS.map(l =>
+                `<option value="${l.code}" ${i18n.currentLang === l.code ? 'selected' : ''}>${l.label}</option>`
+              ).join('')}
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">🌙 ${i18n.t('dark_mode')}</div>
+              <div class="setting-desc">Toggle dark mode theme</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="darkModeCheck" ${isDark ? 'checked' : ''}>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">🔔 ${i18n.t('notifications')}</div>
+              <div class="setting-desc">Enable desktop notifications</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="notificationsCheck" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div style="margin-top:2rem; padding-top:2rem; border-top:1px solid var(--border);">
+            <button class="btn btn-danger btn-full" id="logoutBtn">
+              🚪 ${i18n.t('logout')}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function setupSettingsHandlers() {
+    // Language selector
+    const langSelect = document.getElementById('languageSelect');
+    if (langSelect) {
+      langSelect.addEventListener('change', (e) => {
+        i18n.setLanguage(e.target.value);
+        showNotification('Language changed successfully', 'success');
+        setTimeout(() => location.reload(), 500);
+      });
+    }
+
+    // Dark mode toggle
+    const darkModeCheck = document.getElementById('darkModeCheck');
+    if (darkModeCheck) {
+      darkModeCheck.addEventListener('change', (e) => {
+        document.documentElement.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
+        localStorage.setItem('theme', e.target.checked ? 'dark' : 'light');
+        showNotification(`${e.target.checked ? 'Dark' : 'Light'} mode enabled`, 'success');
+      });
+    }
+
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        if (confirm(i18n.t('logout_confirm'))) {
+          authAPIService.logout();
+        }
+      });
+    }
+  }
+
   return `
     <div class="dashboard">
       <aside class="sidebar">
@@ -1536,13 +1632,10 @@ export function AuthorityDashboard() {
           <div class="nav-item" data-view="analytics">
             <span class="nav-item-icon">📊</span> ${i18n.t('analytics')}
           </div>
+          <div class="nav-item" data-view="settings">
+            <span class="nav-item-icon">⚙️</span> ${i18n.t('settings')}
+          </div>
         </nav>
-        
-        <div class="sidebar-footer">
-          <button class="btn btn-danger btn-sm" id="authorityLogoutBtn" style="width:100%;">
-            🚪 ${i18n.t('logout')}
-          </button>
-        </div>
       </aside>
       
       <main class="main-content" id="mainContent">
