@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Hindi Backend</title>
+  <style>
+    body {
+      font-family: system-ui;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f8fafc;
+    }
+    h1 { color: #2563eb; }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      margin: 0.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover { background: #1d4ed8; }
+    .output {
+      background: white;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 8px;
+      border-left: 4px solid #2563eb;
+      white-space: pre-wrap;
+      font-family: monospace;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .hindi-text {
+      font-size: 1.2rem;
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      background: #fef3c7;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Test Hindi Backend Responses</h1>
+  <p>This tests if the backend is returning Hindi text when language is set to 'hi'.</p>
+
+  <h2>Test Questions:</h2>
+  <button onclick="testQuestion('Risk score?', 'hi')">Test "Risk score?" in Hindi</button>
+  <button onclick="testQuestion('SOS help', 'hi')">Test "SOS help" in Hindi</button>
+  <button onclick="testQuestion('Safety tips', 'hi')">Test "Safety tips" in Hindi</button>
+  <button onclick="testQuestion('hello', 'hi')">Test "hello" in Hindi</button>
+  
+  <h2>Compare with English:</h2>
+  <button onclick="testQuestion('Risk score?', 'en')">Test "Risk score?" in English</button>
+
+  <div id="output" class="output">Click a button to test...</div>
+  <div id="hindiText" class="hindi-text" style="display:none;"></div>
+
+  <script>
+    async function testQuestion(question, lang) {
+      const output = document.getElementById('output');
+      const hindiText = document.getElementById('hindiText');
+      
+      output.textContent = `Testing: "${question}" in language: ${lang}\n\n`;
+      output.textContent += 'Sending request to backend...\n';
+      
+      try {
+        const response = await fetch('http://localhost:5000/api/chatbot', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: 'test-user',
+            message: question,
+            riskData: {
+              score: 50,
+              level: 'Medium'
+            },
+            lang: lang
+          })
+        });
+        
+        if (!response.ok) {
+          output.textContent += `❌ Error: ${response.status} ${response.statusText}\n`;
+          return;
+        }
+        
+        const data = await response.json();
+        const responseText = data.response;
+        
+        output.textContent += '✅ Response received!\n\n';
+        output.textContent += '=== RESPONSE TEXT ===\n';
+        output.textContent += responseText + '\n\n';
+        
+        // Check if response contains Hindi characters
+        const hasHindi = /[\u0900-\u097F]/.test(responseText);
+        const hasMarathi = /[\u0900-\u097F]/.test(responseText);
+        const hasTamil = /[\u0B80-\u0BFF]/.test(responseText);
+        const hasTelugu = /[\u0C00-\u0C7F]/.test(responseText);
+        
+        output.textContent += '=== ANALYSIS ===\n';
+        output.textContent += `Language requested: ${lang}\n`;
+        output.textContent += `Contains Hindi/Marathi: ${hasHindi ? '✅ YES' : '❌ NO'}\n`;
+        output.textContent += `Contains Tamil: ${hasTamil ? '✅ YES' : '❌ NO'}\n`;
+        output.textContent += `Contains Telugu: ${hasTelugu ? '✅ YES' : '❌ NO'}\n`;
+        output.textContent += `Response length: ${responseText.length} characters\n\n`;
+        
+        if (lang === 'hi' && !hasHindi) {
+          output.textContent += '⚠️ WARNING: Requested Hindi but response is in English!\n';
+          output.textContent += 'This means the backend is not returning Hindi responses.\n';
+        } else if (lang === 'hi' && hasHindi) {
+          output.textContent += '✅ SUCCESS: Backend returned Hindi response!\n';
+          hindiText.style.display = 'block';
+          hindiText.textContent = responseText;
+        }
+        
+        // Show raw bytes for debugging
+        output.textContent += '\n=== FIRST 50 CHARACTERS (Unicode) ===\n';
+        for (let i = 0; i < Math.min(50, responseText.length); i++) {
+          const char = responseText[i];
+          const code = char.charCodeAt(0);
+          output.textContent += `${char} (U+${code.toString(16).toUpperCase().padStart(4, '0')}) `;
+        }
+        
+      } catch (error) {
+        output.textContent += `❌ Error: ${error.message}\n`;
+        console.error('Test error:', error);
+      }
+    }
+  </script>
+</body>
+</html>

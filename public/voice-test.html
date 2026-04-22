@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeTrip Voice Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f8fafc;
+    }
+    h1 { color: #2563eb; }
+    .test-section {
+      background: white;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 0.5rem 0.5rem 0.5rem 0;
+      font-size: 1rem;
+    }
+    button:hover { background: #1d4ed8; }
+    .voice-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #e2e8f0;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .voice-item {
+      padding: 0.5rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .voice-item:last-child { border-bottom: none; }
+    .lang-code { 
+      color: #7c3aed; 
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+    .status {
+      padding: 0.5rem 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+      background: #f0f9ff;
+      border-left: 4px solid #2563eb;
+    }
+    .warning {
+      background: #fef3c7;
+      border-left-color: #f59e0b;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎤 SafeTrip Voice Test</h1>
+  
+  <div class="test-section">
+    <h2>Test Voice Output by Language</h2>
+    <p>Click a button to test voice output in that language:</p>
+    <button onclick="testVoice('en-US', 'Hello! This is SafeTrip AI assistant. Your safety is our priority.')">🇬🇧 English</button>
+    <button onclick="testVoice('hi-IN', 'नमस्ते! मैं SafeTrip AI सहायक हूं। आपकी सुरक्षा हमारी प्राथमिकता है।')">🇮🇳 Hindi</button>
+    <button onclick="testVoice('mr-IN', 'नमस्कार! मी SafeTrip AI सहाय्यक आहे। तुमची सुरक्षा आमची प्राथमिकता आहे.')">🇮🇳 Marathi</button>
+    <button onclick="testVoice('ta-IN', 'வணக்கம்! நான் SafeTrip AI உதவியாளர். உங்கள் பாதுகாப்பு எங்கள் முன்னுரிமை.')">🇮🇳 Tamil</button>
+    <button onclick="testVoice('te-IN', 'నమస్కారం! నేను SafeTrip AI సహాయకుడిని. మీ భద్రత మా ప్రాధాన్యత.')">🇮🇳 Telugu</button>
+    <div id="status" class="status" style="display:none;"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Available Voices</h2>
+    <p>Your browser has the following voices installed:</p>
+    <button onclick="loadVoices()">🔄 Refresh Voice List</button>
+    <div id="voiceList" class="voice-list">Loading voices...</div>
+  </div>
+
+  <div class="test-section">
+    <h2>Indian Language Voice Availability</h2>
+    <div id="indianVoices" class="status">Checking...</div>
+  </div>
+
+  <script>
+    let voices = [];
+
+    function loadVoices() {
+      voices = window.speechSynthesis.getVoices();
+      displayVoices();
+      checkIndianVoices();
+    }
+
+    function displayVoices() {
+      const list = document.getElementById('voiceList');
+      if (voices.length === 0) {
+        list.innerHTML = '<p>No voices loaded yet. Try clicking Refresh.</p>';
+        return;
+      }
+
+      list.innerHTML = voices.map(v => 
+        `<div class="voice-item">
+          <span class="lang-code">${v.lang}</span>
+          ${v.name} ${v.default ? '(default)' : ''}
+        </div>`
+      ).join('');
+    }
+
+    function checkIndianVoices() {
+      const indianLangs = ['hi', 'mr', 'ta', 'te'];
+      const found = {};
+      
+      indianLangs.forEach(lang => {
+        const voice = voices.find(v => v.lang.startsWith(lang));
+        found[lang] = voice ? `✅ ${voice.name}` : '❌ Not available';
+      });
+
+      const div = document.getElementById('indianVoices');
+      div.innerHTML = `
+        <strong>Voice Availability:</strong><br>
+        Hindi (hi-IN): ${found.hi}<br>
+        Marathi (mr-IN): ${found.mr}<br>
+        Tamil (ta-IN): ${found.ta}<br>
+        Telugu (te-IN): ${found.te}
+      `;
+
+      const hasAny = Object.values(found).some(v => v.includes('✅'));
+      if (!hasAny) {
+        div.className = 'status warning';
+        div.innerHTML += '<br><br><strong>⚠️ No Indian language voices found.</strong><br>' +
+          'Voice output will use the default system voice. ' +
+          'To get proper pronunciation, install language packs from your device settings.';
+      }
+    }
+
+    function testVoice(lang, text) {
+      const status = document.getElementById('status');
+      status.style.display = 'block';
+      status.className = 'status';
+      status.textContent = `🔊 Speaking in ${lang}...`;
+
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      
+      // Try to find a voice for this language
+      const langPrefix = lang.split('-')[0];
+      const voice = voices.find(v => v.lang === lang) || 
+                    voices.find(v => v.lang.startsWith(langPrefix));
+      
+      if (voice) {
+        utterance.voice = voice;
+        status.textContent = `🔊 Speaking in ${lang} using voice: ${voice.name}`;
+      } else {
+        status.className = 'status warning';
+        status.textContent = `⚠️ No voice found for ${lang}. Using default voice.`;
+      }
+
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      utterance.onend = () => {
+        status.textContent = `✅ Finished speaking in ${lang}`;
+        setTimeout(() => {
+          status.style.display = 'none';
+        }, 2000);
+      };
+
+      utterance.onerror = (e) => {
+        status.className = 'status warning';
+        status.textContent = `❌ Error: ${e.error}`;
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Load voices on page load
+    loadVoices();
+    
+    // Reload when voices change (some browsers load them async)
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  </script>
+</body>
+</html>

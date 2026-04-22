@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check Local Voices</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f8fafc;
+    }
+    h1 { color: #2563eb; margin-bottom: 0.5rem; }
+    .subtitle { color: #64748b; margin-bottom: 2rem; }
+    .section {
+      background: white;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .voice-card {
+      background: #f8fafc;
+      padding: 1rem;
+      margin: 0.75rem 0;
+      border-radius: 8px;
+      border-left: 4px solid #2563eb;
+    }
+    .voice-card.online {
+      border-left-color: #ef4444;
+      background: #fef2f2;
+    }
+    .voice-card.local {
+      border-left-color: #22c55e;
+      background: #f0fdf4;
+    }
+    .voice-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    .voice-details {
+      font-size: 0.9rem;
+      color: #64748b;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.5rem 1rem;
+    }
+    .label { font-weight: 500; }
+    .status {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+    .status.local {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .status.online {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      margin-right: 0.5rem;
+    }
+    button:hover { background: #1d4ed8; }
+    button.test {
+      background: #8b5cf6;
+    }
+    button.test:hover { background: #7c3aed; }
+    .summary {
+      background: #eff6ff;
+      border: 2px solid #2563eb;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+    }
+    .summary h2 {
+      margin-top: 0;
+      color: #2563eb;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .summary-item {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+    .summary-label {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 0.25rem;
+    }
+    .summary-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .summary-value.good { color: #22c55e; }
+    .summary-value.bad { color: #ef4444; }
+    .warning {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+    }
+    .success {
+      background: #dcfce7;
+      border-left: 4px solid #22c55e;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+    }
+    .error {
+      background: #fee2e2;
+      border-left: 4px solid #ef4444;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Voice Pack Checker</h1>
+  <p class="subtitle">Check which voice packs are installed on your system</p>
+
+  <div class="summary" id="summary" style="display: none;">
+    <h2>📊 Summary</h2>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <div class="summary-label">Total Voices</div>
+        <div class="summary-value" id="totalVoices">0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Local Voices</div>
+        <div class="summary-value good" id="localVoices">0</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Online Voices</div>
+        <div class="summary-value bad" id="onlineVoices">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>🇮🇳 Indian Languages</h2>
+    <button onclick="checkVoices()">Check Installed Voices</button>
+    <div id="indianVoices"></div>
+  </div>
+
+  <div class="section">
+    <h2>🌍 All Other Languages</h2>
+    <div id="otherVoices"></div>
+  </div>
+
+  <script>
+    const indianLanguages = {
+      'hi': 'Hindi',
+      'mr': 'Marathi',
+      'ta': 'Tamil',
+      'te': 'Telugu',
+      'bn': 'Bengali',
+      'gu': 'Gujarati',
+      'kn': 'Kannada',
+      'ml': 'Malayalam',
+      'pa': 'Punjabi',
+      'ur': 'Urdu'
+    };
+
+    function checkVoices() {
+      const voices = window.speechSynthesis.getVoices();
+      
+      if (voices.length === 0) {
+        document.getElementById('indianVoices').innerHTML = 
+          '<div class="warning">⚠️ No voices loaded yet. Wait a moment and try again.</div>';
+        return;
+      }
+
+      // Show summary
+      const summary = document.getElementById('summary');
+      summary.style.display = 'block';
+      
+      const localCount = voices.filter(v => 
+        !v.name.includes('Online') && 
+        !v.name.includes('Natural') &&
+        v.localService !== false
+      ).length;
+      
+      const onlineCount = voices.length - localCount;
+      
+      document.getElementById('totalVoices').textContent = voices.length;
+      document.getElementById('localVoices').textContent = localCount;
+      document.getElementById('onlineVoices').textContent = onlineCount;
+
+      // Separate Indian and other voices
+      const indianVoices = [];
+      const otherVoices = [];
+
+      voices.forEach(v => {
+        const langCode = v.lang.split('-')[0];
+        if (indianLanguages[langCode]) {
+          indianVoices.push(v);
+        } else {
+          otherVoices.push(v);
+        }
+      });
+
+      // Display Indian voices
+      displayVoices(indianVoices, 'indianVoices', true);
+      
+      // Display other voices
+      displayVoices(otherVoices, 'otherVoices', false);
+    }
+
+    function displayVoices(voices, containerId, isIndian) {
+      const container = document.getElementById(containerId);
+      
+      if (voices.length === 0) {
+        if (isIndian) {
+          container.innerHTML = '<div class="error">❌ No Indian language voices found! You need to install language packs.</div>';
+        } else {
+          container.innerHTML = '<div class="warning">No other language voices found.</div>';
+        }
+        return;
+      }
+
+      // Group by language
+      const byLang = {};
+      voices.forEach(v => {
+        const langCode = v.lang.split('-')[0];
+        const langName = isIndian ? indianLanguages[langCode] : v.lang;
+        if (!byLang[langName]) byLang[langName] = [];
+        byLang[langName].push(v);
+      });
+
+      let html = '';
+      
+      // Check if we have the required languages
+      if (isIndian) {
+        const required = ['Hindi', 'Marathi', 'Tamil', 'Telugu'];
+        const missing = required.filter(lang => !byLang[lang]);
+        const hasLocal = {};
+        
+        required.forEach(lang => {
+          if (byLang[lang]) {
+            hasLocal[lang] = byLang[lang].some(v => 
+              !v.name.includes('Online') && 
+              !v.name.includes('Natural')
+            );
+          }
+        });
+
+        if (missing.length > 0) {
+          html += `<div class="error">❌ Missing languages: ${missing.join(', ')}</div>`;
+        }
+
+        const onlyOnline = required.filter(lang => byLang[lang] && !hasLocal[lang]);
+        if (onlyOnline.length > 0) {
+          html += `<div class="warning">⚠️ Only ONLINE voices (won't work): ${onlyOnline.join(', ')}</div>`;
+        }
+
+        const hasLocalVoices = required.filter(lang => hasLocal[lang]);
+        if (hasLocalVoices.length > 0) {
+          html += `<div class="success">✅ LOCAL voices installed: ${hasLocalVoices.join(', ')}</div>`;
+        }
+      }
+
+      // Display each language group
+      Object.keys(byLang).sort().forEach(langName => {
+        html += `<h3 style="margin-top: 1.5rem; color: #1e293b;">${langName}</h3>`;
+        
+        byLang[langName].forEach(voice => {
+          const isOnline = voice.name.includes('Online') || voice.name.includes('Natural');
+          const isLocal = !isOnline && voice.localService !== false;
+          
+          html += `
+            <div class="voice-card ${isLocal ? 'local' : 'online'}">
+              <div class="voice-name">${voice.name}</div>
+              <div class="voice-details">
+                <span class="label">Language:</span>
+                <span>${voice.lang}</span>
+                <span class="label">Type:</span>
+                <span>${isLocal ? 'Local (Installed)' : 'Online (Cloud)'}</span>
+                <span class="label">Voice URI:</span>
+                <span style="font-family: monospace; font-size: 0.85rem;">${voice.voiceURI}</span>
+              </div>
+              <span class="status ${isLocal ? 'local' : 'online'}">
+                ${isLocal ? '✅ WORKS' : '❌ TIMEOUT'}
+              </span>
+              <button class="test" onclick="testVoice('${voice.name}', '${voice.lang}')">
+                Test Voice
+              </button>
+            </div>
+          `;
+        });
+      });
+
+      container.innerHTML = html;
+    }
+
+    function testVoice(voiceName, lang) {
+      const voices = window.speechSynthesis.getVoices();
+      const voice = voices.find(v => v.name === voiceName);
+      
+      if (!voice) {
+        alert('Voice not found!');
+        return;
+      }
+
+      // Test text in the voice's language
+      const testTexts = {
+        'hi': 'नमस्कार, यह एक परीक्षण है',
+        'mr': 'नमस्कार, ही एक चाचणी आहे',
+        'ta': 'வணக்கம், இது ஒரு சோதனை',
+        'te': 'నమస్కారం, ఇది ఒక పరీక్ష',
+        'en': 'Hello, this is a test'
+      };
+      
+      const langCode = lang.split('-')[0];
+      const text = testTexts[langCode] || 'Hello, this is a test';
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = voice;
+      utterance.lang = lang;
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      let started = false;
+      let finished = false;
+
+      utterance.onstart = () => {
+        started = true;
+        console.log(`✅ Started: ${voiceName}`);
+      };
+
+      utterance.onend = () => {
+        finished = true;
+        console.log(`✅ Finished: ${voiceName}`);
+      };
+
+      utterance.onerror = (e) => {
+        console.error(`❌ Error: ${voiceName}`, e.error);
+        alert(`Voice error: ${e.error}`);
+      };
+
+      // Timeout check
+      setTimeout(() => {
+        if (started && !finished) {
+          window.speechSynthesis.cancel();
+          alert(`⚠️ Voice "${voiceName}" timed out! This is an ONLINE voice that doesn't work in browsers.`);
+        }
+      }, 5000);
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Auto-load voices
+    if (window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        setTimeout(checkVoices, 500);
+      };
+      
+      // Initial check
+      setTimeout(() => {
+        if (window.speechSynthesis.getVoices().length > 0) {
+          checkVoices();
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>

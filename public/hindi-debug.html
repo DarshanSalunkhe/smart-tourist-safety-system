@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hindi Voice Debug</title>
+  <style>
+    body {
+      font-family: system-ui;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f8fafc;
+    }
+    h1 { color: #2563eb; }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      margin: 0.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover { background: #1d4ed8; }
+    .output {
+      background: white;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 8px;
+      border-left: 4px solid #2563eb;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .voice-item {
+      padding: 0.5rem;
+      margin: 0.25rem 0;
+      background: #f8fafc;
+      border-radius: 4px;
+    }
+    .highlight { background: #fef3c7; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Hindi Voice Debug Tool</h1>
+  
+  <h2>Step 1: Find Hindi Voices</h2>
+  <button onclick="findHindiVoices()">Search for Hindi Voices</button>
+  <div id="hindiVoices" class="output">Click button to search...</div>
+
+  <h2>Step 2: Test Hindi Text</h2>
+  <button onclick="testHindi('hi-IN')">Test with hi-IN</button>
+  <button onclick="testHindi('hi')">Test with hi</button>
+  <button onclick="testHindi('en-IN')">Test with en-IN (Indian English)</button>
+  <button onclick="testHindi('en-US')">Test with en-US (fallback)</button>
+  <button onclick="testAllVoices()">🔍 Test All Voices (Find Working One)</button>
+  <div id="testResult" class="output">Click a test button...</div>
+
+  <h2>Step 3: Test with Different Voices</h2>
+  <div id="voiceButtons"></div>
+  <div id="voiceTest" class="output">Select a voice above...</div>
+
+  <script>
+    const hindiText = 'नमस्ते! मैं SafeTrip AI हूं। आपकी सुरक्षा हमारी प्राथमिकता है।';
+    let allVoices = [];
+
+    function loadVoices() {
+      allVoices = window.speechSynthesis.getVoices();
+    }
+
+    function findHindiVoices() {
+      const output = document.getElementById('hindiVoices');
+      loadVoices();
+      
+      let result = '=== SEARCHING FOR HINDI VOICES ===\n\n';
+      result += `Total voices available: ${allVoices.length}\n\n`;
+      
+      // Search for Hindi voices
+      const hindiVoices = allVoices.filter(v => 
+        v.lang.toLowerCase().includes('hi') || 
+        v.name.toLowerCase().includes('hindi') ||
+        v.name.toLowerCase().includes('हिन्दी')
+      );
+      
+      if (hindiVoices.length > 0) {
+        result += `✅ FOUND ${hindiVoices.length} HINDI VOICE(S):\n\n`;
+        hindiVoices.forEach((v, i) => {
+          result += `${i + 1}. ${v.name}\n`;
+          result += `   Language: ${v.lang}\n`;
+          result += `   Local: ${v.localService ? 'Yes' : 'No'}\n`;
+          result += `   Default: ${v.default ? 'Yes' : 'No'}\n\n`;
+        });
+      } else {
+        result += '❌ NO HINDI VOICES FOUND\n\n';
+        result += 'Searching for similar voices...\n\n';
+        
+        // Look for Indian English or other Indian languages
+        const indianVoices = allVoices.filter(v => 
+          v.lang.includes('IN') || 
+          v.name.toLowerCase().includes('india')
+        );
+        
+        if (indianVoices.length > 0) {
+          result += `Found ${indianVoices.length} Indian voice(s):\n\n`;
+          indianVoices.forEach(v => {
+            result += `- ${v.name} (${v.lang})\n`;
+          });
+        } else {
+          result += 'No Indian voices found at all.\n';
+        }
+      }
+      
+      // Show all voices with 'hi' in lang code
+      result += '\n=== ALL VOICES WITH "hi" IN LANGUAGE CODE ===\n\n';
+      const hiLangVoices = allVoices.filter(v => v.lang.toLowerCase().includes('hi'));
+      if (hiLangVoices.length > 0) {
+        hiLangVoices.forEach(v => {
+          result += `- ${v.name} (${v.lang})\n`;
+        });
+      } else {
+        result += 'None found.\n';
+      }
+      
+      output.textContent = result;
+      
+      // Create test buttons for each Hindi voice
+      createVoiceButtons(hindiVoices);
+    }
+
+    function createVoiceButtons(voices) {
+      const container = document.getElementById('voiceButtons');
+      container.innerHTML = '';
+      
+      if (voices.length === 0) {
+        container.innerHTML = '<p style="color: #f59e0b;">No Hindi voices found. Try installing Hindi language pack.</p>';
+        return;
+      }
+      
+      voices.forEach((voice, i) => {
+        const btn = document.createElement('button');
+        btn.textContent = `Test: ${voice.name}`;
+        btn.onclick = () => testWithVoice(voice);
+        container.appendChild(btn);
+      });
+    }
+
+    function testHindi(langCode) {
+      const output = document.getElementById('testResult');
+      let result = `=== TESTING WITH LANGUAGE CODE: ${langCode} ===\n\n`;
+      result += `Text: ${hindiText}\n\n`;
+      
+      loadVoices();
+      
+      // Try to find voice
+      const voice = allVoices.find(v => v.lang === langCode) ||
+                    allVoices.find(v => v.lang.startsWith(langCode.split('-')[0]));
+      
+      if (voice) {
+        result += `✅ Voice found: ${voice.name} (${voice.lang})\n`;
+      } else {
+        result += `⚠️ No voice found for ${langCode}, using default\n`;
+      }
+      
+      result += '\n🔊 Speaking now...\n';
+      output.textContent = result;
+      
+      // Speak
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(hindiText);
+      utterance.lang = langCode;
+      if (voice) utterance.voice = voice;
+      utterance.rate = 0.9;
+      
+      utterance.onstart = () => {
+        result += '✅ Started speaking\n';
+        output.textContent = result;
+      };
+      
+      utterance.onend = () => {
+        result += '✅ Finished speaking\n';
+        result += '\n🎉 SUCCESS! This language code works.\n';
+        output.textContent = result;
+      };
+      
+      utterance.onerror = (e) => {
+        result += `❌ ERROR: ${e.error}\n`;
+        result += `Error details: ${JSON.stringify(e)}\n`;
+        result += '\nThis language code does not work. Try another.\n';
+        output.textContent = result;
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function testAllVoices() {
+      const output = document.getElementById('testResult');
+      output.textContent = '🔍 Testing all voices to find one that works...\n\n';
+      
+      loadVoices();
+      
+      let index = 0;
+      const testNext = () => {
+        if (index >= allVoices.length) {
+          output.textContent += '\n❌ No working voice found. Hindi voice pack may be corrupted.\n';
+          output.textContent += 'Try reinstalling Hindi language pack or use Indian English (en-IN).\n';
+          return;
+        }
+        
+        const voice = allVoices[index];
+        output.textContent += `Testing ${index + 1}/${allVoices.length}: ${voice.name} (${voice.lang})...\n`;
+        
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(hindiText);
+        utterance.voice = voice;
+        utterance.lang = voice.lang;
+        utterance.rate = 0.9;
+        
+        utterance.onend = () => {
+          output.textContent += `✅ SUCCESS! ${voice.name} (${voice.lang}) WORKS!\n\n`;
+          output.textContent += `Use this voice for Hindi.\n`;
+          output.textContent += `Language code: ${voice.lang}\n`;
+          output.style.borderLeftColor = '#22c55e';
+        };
+        
+        utterance.onerror = (e) => {
+          output.textContent += `❌ Failed: ${e.error}\n`;
+          index++;
+          setTimeout(testNext, 100);
+        };
+        
+        window.speechSynthesis.speak(utterance);
+      };
+      
+      testNext();
+    }
+
+    function testWithVoice(voice) {
+      const output = document.getElementById('voiceTest');
+      let result = `=== TESTING SPECIFIC VOICE ===\n\n`;
+      result += `Voice: ${voice.name}\n`;
+      result += `Language: ${voice.lang}\n`;
+      result += `Local Service: ${voice.localService ? 'Yes' : 'No'}\n`;
+      result += `Text: ${hindiText}\n\n`;
+      result += '🔊 Speaking now...\n';
+      output.textContent = result;
+      
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(hindiText);
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+      utterance.rate = 0.9;
+      
+      utterance.onstart = () => {
+        result += '✅ Started speaking\n';
+        output.textContent = result;
+      };
+      
+      utterance.onend = () => {
+        result += '✅ Finished speaking\n';
+        result += '\n🎉 THIS VOICE WORKS! Use this one.\n';
+        output.textContent = result;
+        output.style.borderLeftColor = '#22c55e';
+      };
+      
+      utterance.onerror = (e) => {
+        result += `❌ ERROR: ${e.error}\n`;
+        result += 'This voice does not work. Try another one.\n';
+        output.textContent = result;
+        output.style.borderLeftColor = '#ef4444';
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Auto-load on page load
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = () => {
+      loadVoices();
+      findHindiVoices();
+    };
+    
+    // Auto-run search after a delay
+    setTimeout(findHindiVoices, 500);
+  </script>
+</body>
+</html>

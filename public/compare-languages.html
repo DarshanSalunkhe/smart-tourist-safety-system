@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Language Voice Comparison</title>
+  <style>
+    body {
+      font-family: system-ui;
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f8fafc;
+    }
+    h1 { color: #2563eb; }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      margin: 1rem 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover { background: #1d4ed8; }
+    .comparison {
+      background: white;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #475569;
+    }
+    .working { color: #22c55e; font-weight: bold; }
+    .broken { color: #ef4444; font-weight: bold; }
+    .warning { color: #f59e0b; font-weight: bold; }
+    .voice-details {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+    }
+    .test-btn {
+      padding: 0.25rem 0.75rem;
+      font-size: 0.85rem;
+      margin: 0;
+    }
+    .highlight {
+      background: #fef3c7;
+      padding: 0.125rem 0.25rem;
+      border-radius: 4px;
+    }
+    .section {
+      margin: 2rem 0;
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      border-left: 4px solid #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Language Voice Comparison Tool</h1>
+  <p>This tool compares voice availability across all languages to identify what's different about Hindi.</p>
+
+  <button onclick="runComparison()">🔬 Run Full Comparison</button>
+
+  <div id="summary" class="section" style="display:none;">
+    <h2>Summary</h2>
+    <div id="summaryContent"></div>
+  </div>
+
+  <div id="comparison" class="comparison" style="display:none;">
+    <h2>Detailed Comparison</h2>
+    <table id="comparisonTable">
+      <thead>
+        <tr>
+          <th>Language</th>
+          <th>Code</th>
+          <th>Voice Found</th>
+          <th>Voice Name</th>
+          <th>Local/Remote</th>
+          <th>Test Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="differences" class="section" style="display:none;">
+    <h2>🔍 Key Differences</h2>
+    <div id="differencesContent"></div>
+  </div>
+
+  <div id="testResults" class="section" style="display:none;">
+    <h2>Test Results</h2>
+    <div id="testContent"></div>
+  </div>
+
+  <script>
+    const languages = [
+      { name: 'English', code: 'en-US', text: 'Hello! This is SafeTrip AI.' },
+      { name: 'Hindi', code: 'hi-IN', text: 'नमस्ते! मैं SafeTrip AI हूं।' },
+      { name: 'Marathi', code: 'mr-IN', text: 'नमस्कार! मी SafeTrip AI आहे.' },
+      { name: 'Tamil', code: 'ta-IN', text: 'வணக்கம்! நான் SafeTrip AI.' },
+      { name: 'Telugu', code: 'te-IN', text: 'నమస్కారం! నేను SafeTrip AI.' }
+    ];
+
+    let allVoices = [];
+    let testResults = {};
+
+    function loadVoices() {
+      allVoices = window.speechSynthesis.getVoices();
+    }
+
+    function findVoiceForLang(langCode) {
+      const langPrefix = langCode.split('-')[0];
+      
+      // Try exact match
+      let voice = allVoices.find(v => v.lang === langCode);
+      if (voice) return { voice, matchType: 'exact' };
+      
+      // Try prefix match
+      voice = allVoices.find(v => v.lang.startsWith(langPrefix));
+      if (voice) return { voice, matchType: 'prefix' };
+      
+      // Try name match
+      voice = allVoices.find(v => v.name.toLowerCase().includes(langPrefix));
+      if (voice) return { voice, matchType: 'name' };
+      
+      return { voice: null, matchType: 'none' };
+    }
+
+    async function testVoice(langCode, text) {
+      return new Promise((resolve) => {
+        const { voice } = findVoiceForLang(langCode);
+        
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = langCode;
+        if (voice) utterance.voice = voice;
+        utterance.rate = 0.9;
+        utterance.volume = 0.1; // Quiet for testing
+        
+        let started = false;
+        let finished = false;
+        let error = null;
+        
+        utterance.onstart = () => { started = true; };
+        utterance.onend = () => { 
+          finished = true;
+          resolve({ success: true, started, finished, error: null });
+        };
+        utterance.onerror = (e) => {
+          error = e.error;
+          resolve({ success: false, started, finished, error });
+        };
+        
+        // Timeout after 3 seconds
+        setTimeout(() => {
+          if (!finished) {
+            window.speechSynthesis.cancel();
+            resolve({ success: false, started, finished, error: 'timeout' });
+          }
+        }, 3000);
+        
+        window.speechSynthesis.speak(utterance);
+      });
+    }
+
+    async function runComparison() {
+      document.getElementById('summary').style.display = 'block';
+      document.getElementById('comparison').style.display = 'block';
+      document.getElementById('differences').style.display = 'none';
+      document.getElementById('testResults').style.display = 'block';
+      
+      const summaryContent = document.getElementById('summaryContent');
+      summaryContent.innerHTML = '⏳ Running comparison... Please wait...';
+      
+      const tableBody = document.getElementById('tableBody');
+      tableBody.innerHTML = '';
+      
+      loadVoices();
+      
+      const results = [];
+      
+      for (const lang of languages) {
+        const { voice, matchType } = findVoiceForLang(lang.code);
+        
+        const row = {
+          name: lang.name,
+          code: lang.code,
+          voice: voice,
+          matchType: matchType,
+          testResult: null
+        };
+        
+        // Test the voice
+        if (voice) {
+          summaryContent.innerHTML = `⏳ Testing ${lang.name}...`;
+          row.testResult = await testVoice(lang.code, lang.text);
+        }
+        
+        results.push(row);
+        
+        // Add to table
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${lang.name}</strong></td>
+          <td><code>${lang.code}</code></td>
+          <td>${voice ? '<span class="working">✅ Yes</span>' : '<span class="broken">❌ No</span>'}</td>
+          <td>${voice ? voice.name : '-'}<br>
+              ${voice ? `<span class="voice-details">${voice.lang}</span>` : ''}</td>
+          <td>${voice ? (voice.localService ? 'Local' : 'Remote') : '-'}</td>
+          <td>${row.testResult ? 
+              (row.testResult.success ? '<span class="working">✅ Works</span>' : 
+               `<span class="broken">❌ ${row.testResult.error}</span>`) : 
+              '<span class="warning">⏳ Testing...</span>'}</td>
+          <td><button class="test-btn" onclick="testSingle('${lang.code}', '${lang.text.replace(/'/g, "\\'")}')">Test</button></td>
+        `;
+        tableBody.appendChild(tr);
+      }
+      
+      // Generate summary
+      const working = results.filter(r => r.testResult?.success);
+      const broken = results.filter(r => r.voice && !r.testResult?.success);
+      const missing = results.filter(r => !r.voice);
+      
+      let summary = '<h3>Results:</h3>';
+      summary += `<p>✅ <strong>Working:</strong> ${working.map(r => r.name).join(', ')}</p>`;
+      if (broken.length > 0) {
+        summary += `<p>❌ <strong>Broken (voice exists but fails):</strong> ${broken.map(r => r.name).join(', ')}</p>`;
+      }
+      if (missing.length > 0) {
+        summary += `<p>⚠️ <strong>Missing (no voice found):</strong> ${missing.map(r => r.name).join(', ')}</p>`;
+      }
+      
+      summaryContent.innerHTML = summary;
+      
+      // Analyze differences
+      analyzeDifferences(results);
+    }
+
+    function analyzeDifferences(results) {
+      document.getElementById('differences').style.display = 'block';
+      const content = document.getElementById('differencesContent');
+      
+      const hindi = results.find(r => r.code === 'hi-IN');
+      const working = results.filter(r => r.testResult?.success && r.code !== 'hi-IN');
+      
+      let html = '<h3>Why Hindi is Different:</h3>';
+      
+      if (!hindi.voice) {
+        html += '<p class="broken">❌ <strong>Hindi voice not found</strong> - No voice pack installed</p>';
+      } else if (!hindi.testResult?.success) {
+        html += '<p class="broken">❌ <strong>Hindi voice exists but fails to synthesize</strong></p>';
+        html += '<p>Error: <code>' + (hindi.testResult?.error || 'unknown') + '</code></p>';
+        html += '<br><h4>Comparison with working languages:</h4>';
+        
+        html += '<table><tr><th>Property</th><th>Hindi</th>';
+        working.forEach(w => html += `<th>${w.name}</th>`);
+        html += '</tr>';
+        
+        // Compare voice properties
+        const properties = [
+          { key: 'name', label: 'Voice Name' },
+          { key: 'lang', label: 'Language Code' },
+          { key: 'localService', label: 'Local Service' },
+          { key: 'default', label: 'Default Voice' },
+          { key: 'voiceURI', label: 'Voice URI' }
+        ];
+        
+        properties.forEach(prop => {
+          html += '<tr>';
+          html += `<td><strong>${prop.label}</strong></td>`;
+          html += `<td>${hindi.voice[prop.key] !== undefined ? hindi.voice[prop.key].toString() : '-'}</td>`;
+          working.forEach(w => {
+            const val = w.voice[prop.key] !== undefined ? w.voice[prop.key].toString() : '-';
+            const isDifferent = val !== (hindi.voice[prop.key] !== undefined ? hindi.voice[prop.key].toString() : '-');
+            html += `<td${isDifferent ? ' class="highlight"' : ''}>${val}</td>`;
+          });
+          html += '</tr>';
+        });
+        
+        html += '</table>';
+        
+        html += '<br><h4>Possible Causes:</h4>';
+        html += '<ul>';
+        html += '<li>Hindi voice pack is <strong>corrupted</strong> or <strong>incomplete</strong></li>';
+        html += '<li>Hindi voice requires additional <strong>dependencies</strong> not installed</li>';
+        html += '<li>Browser has <strong>cached broken voice data</strong></li>';
+        html += '<li>OS language settings for Hindi are <strong>incomplete</strong></li>';
+        html += '<li>Known <strong>bug</strong> with this specific Hindi voice on your system</li>';
+        html += '</ul>';
+        
+        html += '<br><h4>Solutions:</h4>';
+        html += '<ol>';
+        html += '<li><strong>Reinstall Hindi language pack</strong> (Settings → Language)</li>';
+        html += '<li><strong>Clear browser cache</strong> (Ctrl+Shift+Delete)</li>';
+        html += '<li><strong>Use automatic fallback</strong> (already implemented in the app)</li>';
+        html += '<li><strong>Try different browser</strong> (Chrome usually works best)</li>';
+        html += '</ol>';
+      } else {
+        html += '<p class="working">✅ <strong>Hindi is working!</strong></p>';
+      }
+      
+      content.innerHTML = html;
+    }
+
+    async function testSingle(langCode, text) {
+      const testContent = document.getElementById('testContent');
+      testContent.innerHTML = `⏳ Testing ${langCode}...<br>`;
+      
+      const result = await testVoice(langCode, text);
+      
+      testContent.innerHTML += result.success ? 
+        `✅ <strong>Success!</strong> Voice works for ${langCode}<br>` :
+        `❌ <strong>Failed!</strong> Error: ${result.error}<br>`;
+      
+      testContent.innerHTML += `Started: ${result.started}, Finished: ${result.finished}<br>`;
+    }
+
+    // Load voices on page load
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  </script>
+</body>
+</html>

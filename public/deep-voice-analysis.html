@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Voice Analysis</title>
+  <style>
+    body {
+      font-family: system-ui;
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f8fafc;
+    }
+    h1 { color: #2563eb; }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      margin: 1rem 0.5rem 1rem 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover { background: #1d4ed8; }
+    .section {
+      background: white;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    pre {
+      background: #f8fafc;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+    }
+    .success { color: #22c55e; font-weight: bold; }
+    .error { color: #ef4444; font-weight: bold; }
+    .warning { color: #f59e0b; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>🔬 Deep Voice Analysis - Why Hindi Fails</h1>
+  
+  <div class="section">
+    <h2>Step 1: Analyze All Voices</h2>
+    <button onclick="analyzeVoices()">Run Full Analysis</button>
+    <pre id="analysis">Click button to start...</pre>
+  </div>
+
+  <div class="section">
+    <h2>Step 2: Test Each Language with Same Text</h2>
+    <p>Testing: "आपका सुरक्षा जोखिम स्कोर 50 है"</p>
+    <button onclick="testAllLanguages()">Test All Languages</button>
+    <pre id="testResults">Click button to start...</pre>
+  </div>
+
+  <div class="section">
+    <h2>Step 3: Compare Voice Properties</h2>
+    <pre id="comparison">Will show after analysis...</pre>
+  </div>
+
+  <script>
+    const testText = 'आपका सुरक्षा जोखिम स्कोर 50 है';
+    const languages = [
+      { code: 'hi-IN', name: 'Hindi' },
+      { code: 'mr-IN', name: 'Marathi' },
+      { code: 'ta-IN', name: 'Tamil' },
+      { code: 'te-IN', name: 'Telugu' },
+      { code: 'en-US', name: 'English' }
+    ];
+
+    function analyzeVoices() {
+      const output = document.getElementById('analysis');
+      const voices = window.speechSynthesis.getVoices();
+      
+      let result = '=== VOICE ANALYSIS ===\n\n';
+      result += `Total voices: ${voices.length}\n\n`;
+      
+      // Group by language
+      const byLang = {};
+      voices.forEach(v => {
+        const prefix = v.lang.split('-')[0];
+        if (!byLang[prefix]) byLang[prefix] = [];
+        byLang[prefix].push(v);
+      });
+      
+      // Analyze Indian languages
+      result += '=== INDIAN LANGUAGES ===\n\n';
+      ['hi', 'mr', 'ta', 'te'].forEach(lang => {
+        const langVoices = byLang[lang] || [];
+        result += `${lang.toUpperCase()}: ${langVoices.length} voice(s)\n`;
+        langVoices.forEach(v => {
+          result += `  - ${v.name}\n`;
+          result += `    Lang: ${v.lang}\n`;
+          result += `    Local: ${v.localService}\n`;
+          result += `    Default: ${v.default}\n`;
+          result += `    URI: ${v.voiceURI}\n`;
+        });
+        result += '\n';
+      });
+      
+      // Check for differences
+      result += '=== KEY DIFFERENCES ===\n\n';
+      const hiVoices = byLang['hi'] || [];
+      const mrVoices = byLang['mr'] || [];
+      const taVoices = byLang['ta'] || [];
+      const teVoices = byLang['te'] || [];
+      
+      if (hiVoices.length === 0) {
+        result += '❌ HINDI: No voices found!\n';
+      } else if (mrVoices.length > 0 && taVoices.length > 0 && teVoices.length > 0) {
+        result += '✅ All languages have voices\n\n';
+        
+        // Compare properties
+        const hi = hiVoices[0];
+        const mr = mrVoices[0];
+        
+        result += 'Comparing Hindi vs Marathi:\n';
+        result += `  Name: "${hi.name}" vs "${mr.name}"\n`;
+        result += `  Lang: "${hi.lang}" vs "${mr.lang}"\n`;
+        result += `  Local: ${hi.localService} vs ${mr.localService}\n`;
+        result += `  Default: ${hi.default} vs ${mr.default}\n`;
+        result += `  URI: "${hi.voiceURI}" vs "${mr.voiceURI}"\n`;
+        
+        if (hi.voiceURI === mr.voiceURI) {
+          result += '\n⚠️ SAME VOICE URI - might be same voice engine\n';
+        }
+      }
+      
+      output.textContent = result;
+      
+      // Store for comparison
+      window.voiceData = { hi: hiVoices[0], mr: mrVoices[0], ta: taVoices[0], te: teVoices[0] };
+    }
+
+    async function testAllLanguages() {
+      const output = document.getElementById('testResults');
+      output.textContent = '=== TESTING ALL LANGUAGES ===\n\n';
+      
+      for (const lang of languages) {
+        output.textContent += `Testing ${lang.name} (${lang.code})...\n`;
+        
+        const result = await testVoice(lang.code, testText);
+        
+        if (result.success) {
+          output.textContent += `  ✅ SUCCESS\n`;
+        } else {
+          output.textContent += `  ❌ FAILED: ${result.error}\n`;
+        }
+        
+        output.textContent += `  Started: ${result.started}\n`;
+        output.textContent += `  Finished: ${result.finished}\n`;
+        output.textContent += `  Voice used: ${result.voiceName || 'default'}\n\n`;
+      }
+      
+      // Show comparison
+      showComparison();
+    }
+
+    function testVoice(langCode, text) {
+      return new Promise((resolve) => {
+        const voices = window.speechSynthesis.getVoices();
+        const langPrefix = langCode.split('-')[0];
+        const voice = voices.find(v => v.lang === langCode) ||
+                      voices.find(v => v.lang.startsWith(langPrefix));
+        
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = langCode;
+        if (voice) utterance.voice = voice;
+        utterance.rate = 0.9;
+        utterance.volume = 0.1; // Quiet
+        
+        let started = false;
+        let finished = false;
+        let error = null;
+        
+        utterance.onstart = () => { started = true; };
+        utterance.onend = () => { 
+          finished = true;
+          resolve({ 
+            success: true, 
+            started, 
+            finished, 
+            error: null,
+            voiceName: voice ? voice.name : null
+          });
+        };
+        utterance.onerror = (e) => {
+          error = e.error;
+          resolve({ 
+            success: false, 
+            started, 
+            finished, 
+            error,
+            voiceName: voice ? voice.name : null
+          });
+        };
+        
+        setTimeout(() => {
+          if (!finished) {
+            window.speechSynthesis.cancel();
+            resolve({ 
+              success: false, 
+              started, 
+              finished, 
+              error: 'timeout',
+              voiceName: voice ? voice.name : null
+            });
+          }
+        }, 3000);
+        
+        window.speechSynthesis.speak(utterance);
+      });
+    }
+
+    function showComparison() {
+      const output = document.getElementById('comparison');
+      
+      if (!window.voiceData) {
+        output.textContent = 'Run analysis first!';
+        return;
+      }
+      
+      const { hi, mr, ta, te } = window.voiceData;
+      
+      let result = '=== VOICE PROPERTY COMPARISON ===\n\n';
+      
+      if (!hi) {
+        result += '❌ Hindi voice not found - THIS IS THE PROBLEM!\n';
+        result += 'Other languages have voices but Hindi doesn\'t.\n';
+        result += 'Solution: Install Hindi language pack on your device.\n';
+      } else {
+        result += 'Property          | Hindi | Marathi | Tamil | Telugu\n';
+        result += '------------------|-------|---------|-------|-------\n';
+        result += `Name              | ${hi.name.substring(0,15)} | ${mr?.name.substring(0,15)} | ${ta?.name.substring(0,15)} | ${te?.name.substring(0,15)}\n`;
+        result += `Lang              | ${hi.lang} | ${mr?.lang} | ${ta?.lang} | ${te?.lang}\n`;
+        result += `Local Service     | ${hi.localService} | ${mr?.localService} | ${ta?.localService} | ${te?.localService}\n`;
+        result += `Default           | ${hi.default} | ${mr?.default} | ${ta?.default} | ${te?.default}\n`;
+        
+        result += '\n=== CONCLUSION ===\n\n';
+        
+        if (hi.localService === mr?.localService && hi.name.includes('Google') && mr?.name.includes('Google')) {
+          result += '✅ All voices use same engine (Google)\n';
+          result += '✅ All are local services\n';
+          result += '⚠️ But Hindi fails during synthesis\n\n';
+          result += 'This means:\n';
+          result += '1. Hindi voice IS installed\n';
+          result += '2. Hindi voice IS detected\n';
+          result += '3. Hindi voice FAILS when trying to speak\n';
+          result += '4. This is a CORRUPTED VOICE PACK issue\n\n';
+          result += 'Solution: Reinstall Hindi language pack\n';
+        }
+      }
+      
+      output.textContent = result;
+    }
+
+    // Auto-run on load
+    window.speechSynthesis.onvoiceschanged = () => {
+      setTimeout(() => {
+        analyzeVoices();
+      }, 500);
+    };
+    
+    // Initial load
+    setTimeout(() => {
+      if (window.speechSynthesis.getVoices().length > 0) {
+        analyzeVoices();
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

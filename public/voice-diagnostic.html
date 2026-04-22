@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Diagnostic Tool</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #f8fafc;
+    }
+    h1 { color: #1e293b; margin-bottom: 0.5rem; }
+    .subtitle { color: #64748b; margin-bottom: 2rem; }
+    .section {
+      background: white;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .section h2 {
+      margin-top: 0;
+      color: #334155;
+      font-size: 1.25rem;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 0.5rem;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      margin: 0.5rem 0.5rem 0.5rem 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    button:hover { background: #2563eb; }
+    button:active { transform: scale(0.98); }
+    .status {
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .status.info { background: #eff6ff; border-left: 4px solid #3b82f6; }
+    .status.success { background: #f0fdf4; border-left: 4px solid #22c55e; }
+    .status.warning { background: #fef3c7; border-left: 4px solid #f59e0b; }
+    .status.error { background: #fef2f2; border-left: 4px solid #ef4444; }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin: 0.25rem;
+    }
+    .badge.success { background: #dcfce7; color: #166534; }
+    .badge.error { background: #fee2e2; color: #991b1b; }
+    .badge.warning { background: #fef3c7; color: #92400e; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #475569;
+    }
+    tr:hover { background: #f8fafc; }
+    .voice-item {
+      padding: 0.5rem;
+      margin: 0.25rem 0;
+      background: #f8fafc;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    .lang-tag {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔊 SafeTrip Voice Diagnostic Tool</h1>
+  <p class="subtitle">Comprehensive voice output testing and debugging</p>
+
+  <!-- System Check -->
+  <div class="section">
+    <h2>1. System Check</h2>
+    <button onclick="runSystemCheck()">Run System Check</button>
+    <div id="systemCheck" class="status info">Click "Run System Check" to start...</div>
+  </div>
+
+  <!-- Language Tests -->
+  <div class="section">
+    <h2>2. Language Voice Tests</h2>
+    <p>Test voice output in each language:</p>
+    <button onclick="testLang('en-US', 'Hello! This is SafeTrip AI. Your safety is our priority.')">🇬🇧 English</button>
+    <button onclick="testLang('hi-IN', 'नमस्ते! मैं SafeTrip AI हूं। आपकी सुरक्षा हमारी प्राथमिकता है।')">🇮🇳 Hindi</button>
+    <button onclick="testLang('mr-IN', 'नमस्कार! मी SafeTrip AI आहे। तुमची सुरक्षा आमची प्राथमिकता आहे.')">🇮🇳 Marathi</button>
+    <button onclick="testLang('ta-IN', 'வணக்கம்! நான் SafeTrip AI. உங்கள் பாதுகாப்பு எங்கள் முன்னுரிமை.')">🇮🇳 Tamil</button>
+    <button onclick="testLang('te-IN', 'నమస్కారం! నేను SafeTrip AI. మీ భద్రత మా ప్రాధాన్యత.')">🇮🇳 Telugu</button>
+    <div id="langTest" class="status info">Click a language button to test...</div>
+  </div>
+
+  <!-- Available Voices -->
+  <div class="section">
+    <h2>3. Available Voices</h2>
+    <button onclick="listVoices()">Refresh Voice List</button>
+    <div id="voiceList" class="status info">Loading...</div>
+  </div>
+
+  <!-- Indian Language Support -->
+  <div class="section">
+    <h2>4. Indian Language Support</h2>
+    <div id="indianSupport" class="status info">Checking...</div>
+  </div>
+
+  <!-- LocalStorage Check -->
+  <div class="section">
+    <h2>5. App Configuration</h2>
+    <button onclick="checkConfig()">Check Configuration</button>
+    <div id="configCheck" class="status info">Click "Check Configuration" to start...</div>
+  </div>
+
+  <script>
+    let allVoices = [];
+
+    // Load voices
+    function loadVoices() {
+      allVoices = window.speechSynthesis.getVoices();
+      if (allVoices.length > 0) {
+        listVoices();
+        checkIndianSupport();
+      }
+    }
+
+    // System check
+    function runSystemCheck() {
+      const output = document.getElementById('systemCheck');
+      let result = '=== SYSTEM CHECK ===\n\n';
+      
+      // Check speechSynthesis
+      if (window.speechSynthesis) {
+        result += '✅ speechSynthesis API: Available\n';
+      } else {
+        result += '❌ speechSynthesis API: NOT AVAILABLE\n';
+        output.className = 'status error';
+        output.textContent = result;
+        return;
+      }
+      
+      // Check voices
+      const voices = window.speechSynthesis.getVoices();
+      result += `✅ Voices loaded: ${voices.length}\n`;
+      
+      if (voices.length === 0) {
+        result += '⚠️  WARNING: No voices loaded yet. They may load asynchronously.\n';
+      }
+      
+      // Check browser
+      const ua = navigator.userAgent;
+      if (ua.includes('Chrome')) result += '✅ Browser: Chrome (Excellent support)\n';
+      else if (ua.includes('Edge')) result += '✅ Browser: Edge (Excellent support)\n';
+      else if (ua.includes('Safari')) result += '✅ Browser: Safari (Good support)\n';
+      else if (ua.includes('Firefox')) result += '⚠️  Browser: Firefox (Limited support)\n';
+      else result += '⚠️  Browser: Unknown\n';
+      
+      // Check platform
+      if (ua.includes('Android')) result += '✅ Platform: Android\n';
+      else if (ua.includes('iPhone') || ua.includes('iPad')) result += '✅ Platform: iOS\n';
+      else if (ua.includes('Windows')) result += '✅ Platform: Windows\n';
+      else if (ua.includes('Mac')) result += '✅ Platform: macOS\n';
+      else result += '⚠️  Platform: Unknown\n';
+      
+      result += '\n=== VERDICT ===\n';
+      if (voices.length > 0) {
+        result += '✅ System is ready for voice output!';
+        output.className = 'status success';
+      } else {
+        result += '⚠️  System supports voice but voices not loaded yet.';
+        output.className = 'status warning';
+      }
+      
+      output.textContent = result;
+    }
+
+    // Test language
+    function testLang(lang, text) {
+      const output = document.getElementById('langTest');
+      let result = `=== TESTING ${lang} ===\n\n`;
+      result += `Text: ${text}\n`;
+      result += `Language: ${lang}\n\n`;
+      
+      const voices = window.speechSynthesis.getVoices();
+      const langPrefix = lang.split('-')[0];
+      const voice = voices.find(v => v.lang === lang) || 
+                    voices.find(v => v.lang.startsWith(langPrefix));
+      
+      if (voice) {
+        result += `✅ Voice found: ${voice.name} (${voice.lang})\n`;
+      } else {
+        result += `⚠️  No voice found for ${lang}\n`;
+        result += `Will use default voice (may sound incorrect)\n`;
+      }
+      
+      result += `\n🔊 Speaking now...\n`;
+      output.textContent = result;
+      output.className = 'status info';
+      
+      // Speak
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      if (voice) utterance.voice = voice;
+      utterance.rate = 0.9;
+      
+      utterance.onstart = () => {
+        result += `✅ Started speaking\n`;
+        output.textContent = result;
+      };
+      
+      utterance.onend = () => {
+        result += `✅ Finished speaking\n`;
+        output.textContent = result;
+        output.className = 'status success';
+      };
+      
+      utterance.onerror = (e) => {
+        result += `❌ ERROR: ${e.error}\n`;
+        output.textContent = result;
+        output.className = 'status error';
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // List voices
+    function listVoices() {
+      const output = document.getElementById('voiceList');
+      const voices = window.speechSynthesis.getVoices();
+      
+      if (voices.length === 0) {
+        output.textContent = '⚠️  No voices loaded yet. Try refreshing.';
+        output.className = 'status warning';
+        return;
+      }
+      
+      let html = `<strong>Total voices: ${voices.length}</strong><br><br>`;
+      
+      // Group by language
+      const byLang = {};
+      voices.forEach(v => {
+        const lang = v.lang.split('-')[0];
+        if (!byLang[lang]) byLang[lang] = [];
+        byLang[lang].push(v);
+      });
+      
+      // Show Indian languages first
+      const indianLangs = ['hi', 'mr', 'ta', 'te'];
+      indianLangs.forEach(lang => {
+        if (byLang[lang]) {
+          html += `<div class="voice-item"><span class="lang-tag">${lang.toUpperCase()}</span>`;
+          html += byLang[lang].map(v => `${v.name} (${v.lang})`).join(', ');
+          html += '</div>';
+        }
+      });
+      
+      // Show English
+      if (byLang['en']) {
+        html += `<div class="voice-item"><span class="lang-tag">EN</span>`;
+        html += byLang['en'].slice(0, 3).map(v => `${v.name} (${v.lang})`).join(', ');
+        if (byLang['en'].length > 3) html += ` ... and ${byLang['en'].length - 3} more`;
+        html += '</div>';
+      }
+      
+      // Show other languages count
+      const otherCount = Object.keys(byLang).filter(l => !['en', 'hi', 'mr', 'ta', 'te'].includes(l)).length;
+      if (otherCount > 0) {
+        html += `<div class="voice-item"><span class="lang-tag">OTHER</span>${otherCount} other languages</div>`;
+      }
+      
+      output.innerHTML = html;
+      output.className = 'status info';
+    }
+
+    // Check Indian language support
+    function checkIndianSupport() {
+      const output = document.getElementById('indianSupport');
+      const voices = window.speechSynthesis.getVoices();
+      
+      const langs = {
+        'hi': { name: 'Hindi', code: 'hi-IN' },
+        'mr': { name: 'Marathi', code: 'mr-IN' },
+        'ta': { name: 'Tamil', code: 'ta-IN' },
+        'te': { name: 'Telugu', code: 'te-IN' }
+      };
+      
+      let html = '<table><tr><th>Language</th><th>Status</th><th>Voice</th></tr>';
+      let hasAny = false;
+      
+      Object.entries(langs).forEach(([code, info]) => {
+        const voice = voices.find(v => v.lang.startsWith(code));
+        if (voice) {
+          html += `<tr><td>${info.name}</td><td><span class="badge success">✅ Available</span></td><td>${voice.name}</td></tr>`;
+          hasAny = true;
+        } else {
+          html += `<tr><td>${info.name}</td><td><span class="badge error">❌ Not Found</span></td><td>-</td></tr>`;
+        }
+      });
+      
+      html += '</table>';
+      
+      if (!hasAny) {
+        html += '<p style="color: #f59e0b; font-weight: 600;">⚠️  No Indian language voices found!</p>';
+        html += '<p>To get proper pronunciation, install language packs:</p>';
+        html += '<ul>';
+        html += '<li><strong>Android:</strong> Settings → Text-to-speech → Install voice data</li>';
+        html += '<li><strong>iOS:</strong> Settings → Accessibility → Spoken Content → Voices</li>';
+        html += '<li><strong>Windows:</strong> Settings → Language → Download speech pack</li>';
+        html += '<li><strong>macOS:</strong> System Preferences → Accessibility → Spoken Content</li>';
+        html += '</ul>';
+      }
+      
+      output.innerHTML = html;
+      output.className = hasAny ? 'status success' : 'status warning';
+    }
+
+    // Check configuration
+    function checkConfig() {
+      const output = document.getElementById('configCheck');
+      let result = '=== APP CONFIGURATION ===\n\n';
+      
+      // Check localStorage
+      const lang = localStorage.getItem('language');
+      result += `Current language: ${lang || 'not set (default: en)'}\n`;
+      
+      const langMap = {
+        en: 'en-US',
+        hi: 'hi-IN',
+        mr: 'mr-IN',
+        ta: 'ta-IN',
+        te: 'te-IN'
+      };
+      
+      const speechLang = langMap[lang] || 'en-US';
+      result += `Maps to speech code: ${speechLang}\n\n`;
+      
+      // Check if voice exists for this language
+      const voices = window.speechSynthesis.getVoices();
+      const langPrefix = speechLang.split('-')[0];
+      const voice = voices.find(v => v.lang === speechLang) || 
+                    voices.find(v => v.lang.startsWith(langPrefix));
+      
+      if (voice) {
+        result += `✅ Voice available: ${voice.name} (${voice.lang})\n`;
+        output.className = 'status success';
+      } else {
+        result += `⚠️  No voice found for ${speechLang}\n`;
+        result += `Voice output will use default voice\n`;
+        output.className = 'status warning';
+      }
+      
+      output.textContent = result;
+    }
+
+    // Initialize
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    
+    // Auto-run checks
+    setTimeout(() => {
+      runSystemCheck();
+      checkConfig();
+    }, 500);
+  </script>
+</body>
+</html>

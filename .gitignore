@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+.vscode/
+coverage/
+server/google-oauth.json
+PRODUCTION_VALUES_COPY_PASTE.md

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Voice Test</title>
+  <style>
+    body {
+      font-family: system-ui;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      margin: 0.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover { background: #1d4ed8; }
+    .output {
+      background: #f8fafc;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+      border-left: 4px solid #2563eb;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Quick Voice Test</h1>
+  <p>Click a button to test voice in that language:</p>
+  
+  <button onclick="test('en-US', 'Hello, this is a test in English')">English</button>
+  <button onclick="test('hi-IN', 'नमस्ते, यह हिंदी में एक परीक्षण है')">Hindi</button>
+  <button onclick="test('mr-IN', 'नमस्कार, ही मराठीत चाचणी आहे')">Marathi</button>
+  <button onclick="test('ta-IN', 'வணக்கம், இது தமிழில் ஒரு சோதனை')">Tamil</button>
+  <button onclick="test('te-IN', 'నమస్కారం, ఇది తెలుగులో ఒక పరీక్ష')">Telugu</button>
+  
+  <div id="output" class="output">Click a button to start...</div>
+
+  <script>
+    const output = document.getElementById('output');
+    
+    function log(msg) {
+      output.textContent += msg + '\n';
+      console.log(msg);
+    }
+
+    function test(lang, text) {
+      output.textContent = '';
+      log(`Testing ${lang}...`);
+      log(`Text: ${text}`);
+      log('---');
+      
+      // Check if speechSynthesis is available
+      if (!window.speechSynthesis) {
+        log('❌ ERROR: speechSynthesis not available in this browser');
+        return;
+      }
+      log('✅ speechSynthesis is available');
+      
+      // Get voices
+      const voices = window.speechSynthesis.getVoices();
+      log(`Total voices: ${voices.length}`);
+      
+      if (voices.length === 0) {
+        log('⚠️ WARNING: No voices loaded yet. Trying to speak anyway...');
+      }
+      
+      // Find voice for language
+      const langPrefix = lang.split('-')[0];
+      const voice = voices.find(v => v.lang === lang) || 
+                    voices.find(v => v.lang.startsWith(langPrefix));
+      
+      if (voice) {
+        log(`✅ Found voice: ${voice.name} (${voice.lang})`);
+      } else {
+        log(`⚠️ No voice found for ${lang}`);
+        log('Available voices:');
+        voices.slice(0, 10).forEach(v => {
+          log(`  - ${v.name} (${v.lang})`);
+        });
+      }
+      
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+      
+      // Create utterance
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      if (voice) utterance.voice = voice;
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      
+      utterance.onstart = () => {
+        log(`🔊 Started speaking in ${lang}`);
+      };
+      
+      utterance.onend = () => {
+        log('✅ Finished speaking');
+      };
+      
+      utterance.onerror = (e) => {
+        log(`❌ ERROR: ${e.error}`);
+        log(`Error details: ${JSON.stringify(e)}`);
+      };
+      
+      log('Calling speechSynthesis.speak()...');
+      window.speechSynthesis.speak(utterance);
+    }
+    
+    // Load voices on page load
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => {
+      console.log('Voices changed, reloading...');
+      window.speechSynthesis.getVoices();
+    };
+  </script>
+</body>
+</html>
