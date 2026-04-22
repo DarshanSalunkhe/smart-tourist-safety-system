@@ -645,7 +645,11 @@
 
 @media (max-width: 768px) {
   .landing-nav-content {
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .landing-brand {
+    padding-top: 0.5rem;
   }
 
   .landing-brand-text {
@@ -705,8 +709,17 @@
 }
 
 @media (max-width: 480px) {
+  .landing-nav-content {
+    padding: 1.5rem 1rem;
+  }
+  
+  .landing-brand {
+    padding-top: 0.75rem;
+  }
+  
   .landing-nav-actions {
     gap: 0.5rem;
+    padding-top: 0.5rem;
   }
 
   .btn-nav-secondary,
