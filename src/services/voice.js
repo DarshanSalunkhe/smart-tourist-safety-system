@@ -9,6 +9,93 @@ const LANG_MAP = {
   te: 'te-IN',
 };
 
+/**
+ * Check if text contains mixed scripts (e.g., English + Hindi)
+ * @param {string} text - Text to check
+ * @returns {boolean} - True if mixed scripts detected
+ */
+function hasMixedScripts(text) {
+  const hasDevanagari = LANG_PATTERNS.hi.test(text);
+  const hasTamil = LANG_PATTERNS.ta.test(text);
+  const hasTelugu = LANG_PATTERNS.te.test(text);
+  const hasLatin = /[a-zA-Z]/.test(text);
+  
+  const scriptCount = [hasDevanagari, hasTamil, hasTelugu, hasLatin].filter(Boolean).length;
+  return scriptCount > 1;
+}
+
+/**
+ * Clean text for TTS - remove mixed scripts, keep only one language
+ * @param {string} text - Text to clean
+ * @param {string} preferredLang - Preferred language to keep
+ * @returns {string} - Cleaned text
+ */
+function cleanTextForTTS(text, preferredLang = 'en') {
+  if (!hasMixedScripts(text)) return text;
+  
+  console.warn('[Voice] Mixed scripts detected in text, cleaning...');
+  
+  // If preferred language is English, remove all non-Latin characters
+  if (preferredLang === 'en') {
+    const cleaned = text.replace(/[^\x00-\x7F]/g, ' ').replace(/\s+/g, ' ').trim();
+    console.log('[Voice] Cleaned to English only:', cleaned);
+    return cleaned || 'Response contains non-English text';
+  }
+  
+  // Otherwise, remove Latin characters and keep Indian script
+  const cleaned = text.replace(/[a-zA-Z]/g, ' ').replace(/\s+/g, ' ').trim();
+  console.log('[Voice] Cleaned to Indian language only:', cleaned);
+  return cleaned || text; // Fallback to original if cleaning removes everything
+}
+
+// Language detection patterns (Unicode ranges for Indian scripts)
+const LANG_PATTERNS = {
+  // Devanagari script (Hindi/Marathi)
+  hi: /[\u0900-\u097F]/,
+  mr: /[\u0900-\u097F]/,
+  // Tamil script
+  ta: /[\u0B80-\u0BFF]/,
+  // Telugu script
+  te: /[\u0C00-\u0C7F]/,
+  // English (Latin alphabet)
+  en: /^[a-zA-Z0-9\s.,!?'"()-]+$/
+};
+
+/**
+ * Detect language of text based on script/characters
+ * @param {string} text - Text to analyze
+ * @returns {string} - Language code (en, hi, mr, ta, te)
+ */
+function detectLanguage(text) {
+  if (!text || text.trim().length === 0) return 'en';
+  
+  const trimmed = text.trim();
+  
+  // Check for Indian scripts first (more specific)
+  if (LANG_PATTERNS.ta.test(trimmed)) {
+    console.log('[Voice] Detected Tamil script');
+    return 'ta';
+  }
+  if (LANG_PATTERNS.te.test(trimmed)) {
+    console.log('[Voice] Detected Telugu script');
+    return 'te';
+  }
+  if (LANG_PATTERNS.hi.test(trimmed)) {
+    // Devanagari could be Hindi or Marathi - check user preference
+    const savedLang = localStorage.getItem('language') || 'en';
+    if (savedLang === 'mr') {
+      console.log('[Voice] Detected Devanagari script (Marathi preference)');
+      return 'mr';
+    }
+    console.log('[Voice] Detected Devanagari script (Hindi)');
+    return 'hi';
+  }
+  
+  // Default to English
+  console.log('[Voice] Detected English/Latin script');
+  return 'en';
+}
+
 // PERMANENT VOICE PREFERENCES: Preferred voices per language (in priority order)
 // If these are found, they will ALWAYS be used. Others are blocked.
 const PREFERRED_VOICES = {
@@ -178,15 +265,30 @@ class VoiceService {
   }
 
   // ── Text-to-speech ────────────────────────────────────────
-  // lang param: language code (e.g., 'en-US', 'hi-IN'), or 'auto' to use selected language
+  // lang param: language code (e.g., 'en-US', 'hi-IN'), or 'auto' to detect from text
   speak(text, lang = 'auto') {
     if (!window.speechSynthesis) {
       console.error('[Voice] speechSynthesis not available');
       return;
     }
     
-    // Use selected language if 'auto', otherwise use provided lang
-    const speechLang = lang === 'auto' ? getSpeechLang() : lang;
+    // CRITICAL FIX: Detect language from text content if 'auto'
+    let speechLang;
+    let detectedLang;
+    if (lang === 'auto') {
+      detectedLang = detectLanguage(text);
+      speechLang = LANG_MAP[detectedLang] || 'en-US';
+      console.log(`[Voice] Auto-detected language: ${detectedLang} → ${speechLang}`);
+      
+      // Clean mixed-script text
+      if (hasMixedScripts(text)) {
+        text = cleanTextForTTS(text, detectedLang);
+      }
+    } else {
+      speechLang = lang;
+      detectedLang = lang.split('-')[0];
+    }
+    
     console.log(`[Voice] Speaking in ${speechLang}, text: "${text.substring(0, 50)}..."`);
     
     const voices = window.speechSynthesis.getVoices();
@@ -200,7 +302,7 @@ class VoiceService {
     
     console.log(`[Voice] Total voices available: ${voices.length}`);
     
-    const langPrefix = speechLang.split('-')[0];
+    const langPrefix = detectedLang || speechLang.split('-')[0];
     
     // Try to use cached voice first (performance optimization)
     if (this.cachedVoice && 
