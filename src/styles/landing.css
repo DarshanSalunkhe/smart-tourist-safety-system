@@ -653,15 +653,18 @@
   }
 
   .landing-hero {
-    padding: 6rem 1.5rem 4rem;
+    padding: 5rem 1.5rem 3rem;
+    min-height: auto;
   }
 
   .landing-hero-title {
-    font-size: 2.25rem;
+    font-size: 2rem;
+    margin-bottom: 1rem;
   }
 
   .landing-hero-subtitle {
-    font-size: 1.125rem;
+    font-size: 1rem;
+    margin-bottom: 2rem;
   }
 
   .landing-hero-actions {
@@ -712,8 +715,18 @@
     font-size: 0.875rem;
   }
 
+  .landing-hero {
+    padding: 4.5rem 1.5rem 2.5rem;
+  }
+
   .landing-hero-title {
-    font-size: 1.875rem;
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .landing-hero-subtitle {
+    font-size: 0.9375rem;
+    margin-bottom: 1.5rem;
   }
 
   .landing-trust-content {

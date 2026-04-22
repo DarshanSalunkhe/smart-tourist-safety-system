@@ -19,7 +19,7 @@ export function LandingPage() {
       <section class="landing-hero">
         <div class="landing-hero-content">
           <div class="landing-hero-text">
-            <h1 class="landing-hero-title">Travel Safer with AI</h1>
+            <h1 class="landing-hero-title">Your AI-Powered Safety Companion</h1>
             <p class="landing-hero-subtitle">Real-time alerts, emergency support, and smart travel guidance wherever you go.</p>
             <div class="landing-hero-actions">
               <button class="btn-hero-primary" onclick="location.hash='#/register'">
