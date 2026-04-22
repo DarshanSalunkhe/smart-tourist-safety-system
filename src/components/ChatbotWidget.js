@@ -9,11 +9,11 @@ export function createChatbotWidget(userId) {
   style.textContent = `
     /* ── FAB ── */
     .cb-fab {
-      position: fixed; bottom: 96px; right: 22px;
-      width: 58px; height: 58px; border-radius: 50%;
+      position: fixed; bottom: 104px; right: 20px;
+      width: 70px; height: 70px; border-radius: 50%;
       border: none; cursor: pointer; z-index: 1001;
       background: linear-gradient(135deg, #7c3aed, #2563eb);
-      color: #fff; font-size: 1.4rem;
+      color: #fff; font-size: 1.6rem;
       box-shadow: 0 4px 20px rgba(124,58,237,.45), 0 2px 8px rgba(0,0,0,.2);
       transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
       display: flex; align-items: center; justify-content: center;
@@ -217,7 +217,7 @@ export function createChatbotWidget(userId) {
     /* ── MOBILE ── */
     @media(max-width:480px) {
       .cb-panel { width: calc(100vw - 24px); right: 12px; bottom: 160px; height: 480px; }
-      .cb-fab { right: 12px; bottom: 88px; }
+      .cb-fab { right: 20px; bottom: 98px; width: 64px; height: 64px; font-size: 1.4rem; }
     }
   `;
   document.head.appendChild(style);
