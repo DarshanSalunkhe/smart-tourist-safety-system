@@ -251,6 +251,12 @@ export function AdminDashboard() {
       
       console.log('[AdminDashboard] ✅ Risk zone map initialized successfully with', zones.length, 'zones');
       
+      // Hide loading indicator
+      const loadingIndicator = document.getElementById('mapLoadingIndicator');
+      if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+      }
+      
       // Force map to recalculate size
       setTimeout(() => {
         if (map) {
@@ -261,6 +267,17 @@ export function AdminDashboard() {
     } catch (error) {
       console.error('[AdminDashboard] ❌ Map initialization error:', error);
       console.error('[AdminDashboard] Error stack:', error.stack);
+      
+      // Show error in loading indicator
+      const loadingIndicator = document.getElementById('mapLoadingIndicator');
+      if (loadingIndicator) {
+        loadingIndicator.innerHTML = `
+          <div style="margin-bottom: 0.5rem;">❌</div>
+          <div>Failed to load map</div>
+          <div style="font-size: 0.75rem; margin-top: 0.25rem;">${error.message}</div>
+        `;
+        loadingIndicator.style.color = 'var(--danger)';
+      }
     }
   }
 
@@ -342,7 +359,6 @@ export function AdminDashboard() {
       btn.addEventListener('click', () => {
         currentView = btn.dataset.tab;
         updateMainContent(currentView);
-        if (currentView === 'zones') setTimeout(() => initializeRiskZoneMap(), 100);
       });
     });
 
@@ -351,11 +367,13 @@ export function AdminDashboard() {
     if (view === 'zones')  { 
       setupZoneHandlers(); 
       setupLocationFilterHandlers(handleLocationChange, handleLocationChange);
-      // Initialize map after DOM is ready
-      setTimeout(() => {
-        console.log('[AdminDashboard] Initializing risk zone map...');
-        initializeRiskZoneMap();
-      }, 200);
+      // Initialize map after DOM is ready - use requestAnimationFrame for better timing
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          console.log('[AdminDashboard] Triggering risk zone map initialization...');
+          initializeRiskZoneMap();
+        }, 300);
+      });
     }
     if (view === 'analytics') setupLocationFilterHandlers(handleLocationChange, handleLocationChange);
     if (view === 'demo')   setupDemoHandlers();
@@ -474,7 +492,13 @@ export function AdminDashboard() {
           showLabel: true
         })}
         
-        <div id="riskZoneMap" class="map-container" style="height: 400px; margin: 1rem 0; border-radius: 0.5rem; overflow: hidden;"></div>
+        <div style="position: relative;">
+          <div id="riskZoneMap" class="map-container" style="height: 400px; width: 100%; margin: 1rem 0; border-radius: 0.5rem; overflow: hidden; background: #f0f0f0; position: relative; z-index: 1;"></div>
+          <div id="mapLoadingIndicator" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-light); font-size: 0.9rem; z-index: 2;">
+            <div style="margin-bottom: 0.5rem;">🗺️</div>
+            <div>Loading map...</div>
+          </div>
+        </div>
         
         <div id="zoneForm" style="display: none; margin-bottom: 2rem; padding: 1.5rem; background: var(--bg); border-radius: 0.5rem;">
           <h4>Add New Risk Zone</h4>
