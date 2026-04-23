@@ -1267,8 +1267,13 @@ export function AuthorityDashboard() {
   }
 
   function getTouristsView() {
+    console.log('[AuthorityDashboard] getTouristsView - cachedUsers:', cachedUsers.length);
+    console.log('[AuthorityDashboard] User roles:', cachedUsers.map(u => ({ id: u.id, name: u.name, role: u.role })));
+    
     const users = cachedUsers // Use cached users from API
       .filter(u => u.role === 'tourist');
+    
+    console.log('[AuthorityDashboard] Filtered tourists:', users.length);
 
     return `
       <div class="card">
