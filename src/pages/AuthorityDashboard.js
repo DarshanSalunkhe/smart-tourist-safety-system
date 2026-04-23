@@ -835,8 +835,10 @@ export function AuthorityDashboard() {
                   <div class="empty-state-desc">No active incidents</div>
                 </div>` :
                 incidents.slice(0, 20).map(inc => {
-                  const userName = inc.user_name || 'Unknown Tourist';
-                  const location = inc.city || inc.state || 'Unknown Location';
+                  // Get user data from cachedUsers
+                  const user = cachedUsers.find(u => u.id === inc.user_id);
+                  const userName = user?.name || inc.user_name || 'Unknown Tourist';
+                  const location = inc.location?.city || inc.city || inc.location?.state || inc.state || 'Unknown Location';
                   const timestamp = inc.created_at ? formatTimeIST(inc.created_at) : 'Just now';
                   
                   // Handle both location formats: inc.location.lat or inc.location_lat
