@@ -497,7 +497,8 @@ app.post('/auth/login',
           refreshToken,
           user: {
             id: user.id, email: user.email, name: user.name, role: user.role,
-            picture: user.picture, blockchainId: user.blockchain_id,
+            picture: user.picture, profile_photo: user.profile_photo,
+            blockchainId: user.blockchain_id,
             phone: user.phone, emergencyContact: user.emergency_contact
           }
         });
@@ -599,6 +600,7 @@ app.get('/auth/user', async (req, res) => {
         name: user.name,
         role: user.role,
         picture: user.picture,
+        profile_photo: user.profile_photo,
         blockchainId: user.blockchain_id,
         phone: user.phone,
         emergencyContact: user.emergency_contact
@@ -846,7 +848,7 @@ app.get('/api/users', requireAuth, async (req, res) => {
     // Use CASE statement to auto-detect inactive users (no update for 10+ minutes)
     let query = `
       SELECT 
-        id, email, name, role, phone, emergency_contact, blockchain_id, picture, 
+        id, email, name, role, phone, emergency_contact, blockchain_id, picture, profile_photo,
         state, city, auth_provider, google_id, location_lat, location_lng, 
         location_timestamp, created_at,
         CASE 
@@ -929,7 +931,7 @@ app.patch('/api/users/:id', async (req, res) => {
        SET phone = COALESCE($1, phone),
            emergency_contact = COALESCE($2, emergency_contact)
        WHERE id = $3
-       RETURNING id, email, name, role, phone, emergency_contact, blockchain_id, picture`,
+       RETURNING id, email, name, role, phone, emergency_contact, blockchain_id, picture, profile_photo`,
       [phone || null, emergencyContact || null, id]
     );
 
@@ -953,7 +955,8 @@ app.patch('/api/users/:id', async (req, res) => {
         phone: updated.phone,
         emergencyContact: updated.emergency_contact,
         blockchainId: updated.blockchain_id,
-        picture: updated.picture
+        picture: updated.picture,
+        profile_photo: updated.profile_photo
       }
     });
   } catch (error) {

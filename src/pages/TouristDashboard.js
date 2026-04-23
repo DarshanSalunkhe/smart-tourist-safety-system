@@ -1108,20 +1108,28 @@ export function TouristDashboard() {
 
         const data = await res.json();
 
-        // Update in-memory user and localStorage
-        user.phone            = data.user.phone;
-        user.emergencyContact = data.user.emergencyContact;
-        localStorage.setItem('user', JSON.stringify(user));
+        // Merge response with existing localStorage data to preserve profile_photo and other fields
+        const currentUser = JSON.parse(localStorage.getItem('user')) || user;
+        const updatedUser = {
+          ...currentUser,
+          phone: data.user.phone,
+          emergencyContact: data.user.emergencyContact,
+          // Preserve profile_photo if backend returns it
+          profile_photo: data.user.profile_photo || currentUser.profile_photo
+        };
+        
+        // Update localStorage with merged data
+        localStorage.setItem('user', JSON.stringify(updatedUser));
 
         // Refresh display values
-        phoneDisplay.textContent     = user.phone || '—';
-        emergencyDisplay.textContent = user.emergencyContact || '—';
+        phoneDisplay.textContent     = updatedUser.phone || '—';
+        emergencyDisplay.textContent = updatedUser.emergencyContact || '—';
 
         exitEditMode();
         showMsg('✅ Profile updated successfully.', 'var(--success)');
         showNotification(i18n.t('profile_updated'), 'success');
 
-        console.log('[Profile] Saved:', { phone: user.phone, emergencyContact: user.emergencyContact });
+        console.log('[Profile] Saved:', { phone: updatedUser.phone, emergencyContact: updatedUser.emergencyContact });
       } catch (error) {
         console.error('[Profile] Save failed:', error);
         showMsg(`❌ ${error.message}`, 'var(--danger)');
