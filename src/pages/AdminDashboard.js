@@ -97,15 +97,21 @@ export function AdminDashboard() {
         const errorText = await response.text();
         console.error('[AdminDashboard] ❌ Failed to fetch users:', response.status, errorText);
         
-        // Show error notification
-        showNotification(`Failed to load users: ${response.status}`, 'error');
+        // Show error notification with more details
+        if (response.status === 403) {
+          showNotification('Access denied. Admin privileges required.', 'error');
+        } else if (response.status === 401) {
+          showNotification('Not authenticated. Please login again.', 'error');
+        } else {
+          showNotification(`Failed to load users: ${response.status}`, 'error');
+        }
       }
     } catch (error) {
       console.error('[AdminDashboard] ❌ Error fetching users:', error);
       console.error('[AdminDashboard] Error details:', error.message, error.stack);
       
       // Show error notification
-      showNotification('Failed to connect to server', 'error');
+      showNotification('Failed to connect to server. Check console for details.', 'error');
     }
   }
   
@@ -464,7 +470,7 @@ export function AdminDashboard() {
                     ${u.role}
                   </span>
                 </td>
-                <td style="padding: 0.75rem;"><code style="font-size: 0.85rem;">${u.blockchainId}</code></td>
+                <td style="padding: 0.75rem;"><code style="font-size: 0.85rem;">${u.blockchain_id || u.blockchainId || 'N/A'}</code></td>
                 <td style="padding: 0.75rem;">
                   <span style="color: var(--success);">✓ Active</span>
                 </td>
@@ -474,7 +480,21 @@ export function AdminDashboard() {
                   </button>
                 </td>
               </tr>
-            `).join('') : `<tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-light);">${i18n.t('no_data')}</td></tr>`}
+            `).join('') : `
+              <tr>
+                <td colspan="6" style="padding: 3rem; text-align: center;">
+                  <div style="color: var(--text-light);">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
+                    <h3 style="margin-bottom: 0.5rem;">No Users Found</h3>
+                    <p style="margin: 0;">
+                      ${cachedUsers.length === 0 
+                        ? 'Failed to load users from server. Check console for errors.' 
+                        : 'No users match the selected filters.'}
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            `}
           </tbody>
         </table>
       </div>
