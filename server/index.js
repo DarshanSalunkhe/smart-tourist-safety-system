@@ -39,6 +39,11 @@ function signTokens(userId, role) {
 
 // ── JWT middleware — accepts both JWT and legacy session ───
 function requireAuth(req, res, next) {
+  console.log('[Auth] Request to:', req.path);
+  console.log('[Auth] Session ID:', req.sessionID);
+  console.log('[Auth] Session userId:', req.session?.userId);
+  console.log('[Auth] Cookies:', Object.keys(req.cookies || {}));
+  
   // 1. Try Bearer token
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -46,16 +51,20 @@ function requireAuth(req, res, next) {
       const payload = jwt.verify(authHeader.slice(7), JWT_SECRET);
       req.userId = payload.userId;
       req.userRole = payload.role;
+      console.log('[Auth] ✅ Authenticated via JWT:', req.userId, req.userRole);
       return next();
     } catch (e) {
+      console.error('[Auth] ❌ Invalid JWT token:', e.message);
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
   }
   // 2. Fall back to session (backward compat)
   if (req.session?.userId) {
     req.userId = req.session.userId;
+    console.log('[Auth] ✅ Authenticated via session:', req.userId);
     return next();
   }
+  console.error('[Auth] ❌ No valid authentication found');
   return res.status(401).json({ error: 'Authentication required' });
 }
 
@@ -131,8 +140,22 @@ const sosLimiter = rateLimit({
 app.use(generalLimiter);
 
 app.use(cors({
-  origin: ALLOWED_ORIGINS,
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (ALLOWED_ORIGINS.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn('[CORS] Blocked origin:', origin);
+      console.warn('[CORS] Allowed origins:', ALLOWED_ORIGINS);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Set-Cookie']
 }));
 
 app.use(express.json());
