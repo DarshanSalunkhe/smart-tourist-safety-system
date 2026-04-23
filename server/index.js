@@ -805,13 +805,19 @@ app.patch('/api/incidents/:id', requireAuth, async (req, res) => {
 // ============= USER ROUTES =============
 
 app.get('/api/users', requireAuth, async (req, res) => {
+  console.log('[Users API] Request from user:', req.userId, 'Session role:', req.userRole);
+  
   // Only admin and authority can list users
   const callerRole = req.userRole || (await pool.query('SELECT role FROM users WHERE id=$1',[req.userId])).rows[0]?.role;
+  console.log('[Users API] Resolved caller role:', callerRole);
+  
   if (!['admin','authority'].includes(callerRole)) {
+    console.warn('[Users API] ❌ Access denied for role:', callerRole);
     return res.status(403).json({ error: 'Forbidden — admin or authority only' });
   }
 
   const { role, state, city } = req.query;
+  console.log('[Users API] Query filters:', { role, state, city });
   
   try {
     // Use CASE statement to auto-detect inactive users (no update for 10+ minutes)
