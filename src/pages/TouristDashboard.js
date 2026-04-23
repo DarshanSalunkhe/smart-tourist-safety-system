@@ -801,7 +801,10 @@ export function TouristDashboard() {
   }
 
   function getProfileView() {
-    const photoUrl = user.profile_photo || 'https://via.placeholder.com/150?text=No+Photo';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const photoUrl = user.profile_photo 
+      ? `${API_URL}${user.profile_photo}` 
+      : 'https://via.placeholder.com/150?text=No+Photo';
     
     return `
       <div class="card">
