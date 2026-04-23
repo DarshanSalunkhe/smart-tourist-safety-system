@@ -739,7 +739,7 @@ export function TouristDashboard() {
           <span class="action-icon">📋</span>
           <span class="action-label">${i18n.t('report_incident_btn')}</span>
         </button>
-        <button class="action-btn ai" onclick="document.querySelector('.chatbot-fab')?.click()">
+        <button class="action-btn ai" onclick="document.querySelector('.cb-fab')?.click()">
           <span class="action-icon">🤖</span>
           <span class="action-label">${i18n.t('ai_assistant')}</span>
         </button>
