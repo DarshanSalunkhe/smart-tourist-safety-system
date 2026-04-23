@@ -1002,8 +1002,7 @@ export function TouristDashboard() {
           user.profile_photo = data.path;
           localStorage.setItem('user', JSON.stringify(user));
           
-          // Update the preview immediately
-          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+          // Update the preview immediately (reuse API_URL from above)
           photoPreview.src = `${API_URL}${data.path}`;
           
           showPhotoMsg('✅ Photo uploaded successfully!', 'var(--success)');
