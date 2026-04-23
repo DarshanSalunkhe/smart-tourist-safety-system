@@ -1,12 +1,18 @@
 import { authAPIService } from '../services/auth-api.js';
 
+// Make logout available globally for onclick handlers
+window.handleLogout = function() {
+  console.log('[LandingPage] Logout clicked');
+  authAPIService.logout();
+};
+
 export function LandingPage() {
   const user = authAPIService.getCurrentUser();
   
   // Determine navigation buttons based on login status
   const navButtons = user ? `
     <button class="btn-nav-secondary" onclick="location.hash='#/${user.role}'">Go to Dashboard</button>
-    <button class="btn-nav-primary" onclick="authAPIService.logout()">Logout</button>
+    <button class="btn-nav-primary" onclick="window.handleLogout()">Logout</button>
   ` : `
     <button class="btn-nav-secondary" onclick="location.hash='#/login'">Login</button>
     <button class="btn-nav-primary" onclick="location.hash='#/register'">Sign Up</button>
