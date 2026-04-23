@@ -40,11 +40,17 @@ export function IncidentResponseCenter(incidentId) {
   // Fetch tourist data
   setTimeout(async () => {
     try {
+      console.log('[IncidentResponseCenter] Fetching tourist data for user_id:', incident.user_id);
       const response = await fetch(`${API_URL}/api/users`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
+        console.log('[IncidentResponseCenter] Users fetched:', data.users?.length);
         tourist = data.users?.find(u => u.id === incident.user_id);
+        console.log('[IncidentResponseCenter] Tourist found:', tourist);
+        console.log('[IncidentResponseCenter] Tourist phone:', tourist?.phone);
         updateTouristDetails();
+      } else {
+        console.error('[IncidentResponseCenter] Failed to fetch users:', response.status);
       }
     } catch (error) {
       console.error('[IncidentResponseCenter] Error fetching tourist:', error);
@@ -77,7 +83,16 @@ export function IncidentResponseCenter(incidentId) {
   }
 
   function updateTouristDetails() {
-    if (!tourist) return;
+    if (!tourist) {
+      console.warn('[IncidentResponseCenter] No tourist data available');
+      return;
+    }
+    
+    console.log('[IncidentResponseCenter] Updating tourist details:', {
+      name: tourist.name,
+      phone: tourist.phone,
+      email: tourist.email
+    });
     
     const nameEl = document.getElementById('touristName');
     const phoneEl = document.getElementById('touristPhone');
@@ -87,13 +102,14 @@ export function IncidentResponseCenter(incidentId) {
     const emergencyEl = document.getElementById('touristEmergency');
 
     if (nameEl) nameEl.textContent = tourist.name || 'Unknown';
-    if (phoneEl) phoneEl.textContent = tourist.phone || 'N/A';
+    if (phoneEl) phoneEl.textContent = tourist.phone || 'Phone number not available';
     if (emailEl) emailEl.textContent = tourist.email || 'N/A';
     if (nationalityEl) nationalityEl.textContent = tourist.nationality || 'N/A';
-    if (emergencyEl) emergencyEl.textContent = tourist.emergencyContact || 'N/A';
+    if (emergencyEl) emergencyEl.textContent = tourist.emergency_contact || tourist.emergencyContact || 'N/A';
     
-    if (photoEl && tourist.profilePhoto) {
-      photoEl.src = tourist.profilePhoto;
+    if (photoEl && tourist.profile_photo) {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      photoEl.src = `${API_URL}${tourist.profile_photo}`;
     }
   }
 
