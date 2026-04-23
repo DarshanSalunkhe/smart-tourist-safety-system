@@ -595,9 +595,9 @@ class VoiceService {
   triggerVoiceSOS(phrase) {
     console.log('🚨 Voice SOS triggered:', phrase);
     import('./incident.js').then(({ incidentService }) => {
-      import('./auth.js').then(({ authService }) => {
+      import('./auth-api.js').then(({ authAPIService }) => {
         import('./location.js').then(({ locationService }) => {
-          const user = authService.getCurrentUser();
+          const user = authAPIService.getCurrentUser();
           const location = locationService.getCurrentLocation() || locationService.getLastSavedLocation();
           if (user) {
             incidentService.triggerSOS(user.id, location, 'voice');

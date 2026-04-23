@@ -32,14 +32,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor': ['leaflet'],
-        }
-      }
-    }
+    sourcemap: true
   },
   optimizeDeps: {
     include: ['leaflet']

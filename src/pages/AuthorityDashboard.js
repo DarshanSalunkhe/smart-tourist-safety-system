@@ -693,7 +693,6 @@ export function AuthorityDashboard() {
       content.innerHTML = getSettingsView();
       setupSettingsHandlers();
     }
-    }
 
     // Wire demo button on every view render
     setTimeout(() => {
