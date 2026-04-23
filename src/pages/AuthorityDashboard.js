@@ -2089,19 +2089,19 @@ export function AuthorityDashboard() {
         
         <nav>
           <div class="nav-section-label">Operations</div>
-          <div class="nav-item active" data-view="map" onclick="window.navigateToView('map')">
+          <div class="nav-item active" data-view="map" onclick="window.navigateToView('map')" style="cursor: pointer;">
             <span class="nav-item-icon">🗺️</span> ${i18n.t('live_map')}
           </div>
-          <div class="nav-item" data-view="alerts" onclick="window.navigateToView('alerts')">
+          <div class="nav-item" data-view="alerts" onclick="window.navigateToView('alerts')" style="cursor: pointer;">
             <span class="nav-item-icon">🚨</span> ${i18n.t('alerts')}
           </div>
-          <div class="nav-item" data-view="tourists" onclick="window.navigateToView('tourists')">
+          <div class="nav-item" data-view="tourists" onclick="window.navigateToView('tourists')" style="cursor: pointer;">
             <span class="nav-item-icon">👥</span> ${i18n.t('tourists')}
           </div>
-          <div class="nav-item" data-view="analytics" onclick="window.navigateToView('analytics')">
+          <div class="nav-item" data-view="analytics" onclick="window.navigateToView('analytics')" style="cursor: pointer;">
             <span class="nav-item-icon">📊</span> ${i18n.t('analytics')}
           </div>
-          <div class="nav-item" data-view="settings" onclick="window.navigateToView('settings')">
+          <div class="nav-item" data-view="settings" onclick="window.navigateToView('settings')" style="cursor: pointer;">
             <span class="nav-item-icon">⚙️</span> ${i18n.t('settings')}
           </div>
         </nav>
