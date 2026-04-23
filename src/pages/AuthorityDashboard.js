@@ -829,9 +829,14 @@ export function AuthorityDashboard() {
                   const userName = inc.user_name || 'Unknown Tourist';
                   const location = inc.city || inc.state || 'Unknown Location';
                   const timestamp = inc.created_at ? formatTimeIST(inc.created_at) : 'Just now';
-                  const coords = inc.location_lat && inc.location_lng 
-                    ? `${inc.location_lat.toFixed(4)}, ${inc.location_lng.toFixed(4)}`
-                    : '';
+                  
+                  // Handle both location formats: inc.location.lat or inc.location_lat
+                  let coords = '';
+                  const lat = inc.location?.lat || inc.location_lat;
+                  const lng = inc.location?.lng || inc.location_lng;
+                  if (lat && lng && typeof lat === 'number' && typeof lng === 'number') {
+                    coords = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                  }
                   
                   return `
                   <div class="alert-rail-item ${inc.severity === 'critical' ? 'critical' : inc.severity === 'high' ? 'high' : ''} ${inc.status === 'resolved' ? 'resolved' : ''}">
@@ -1122,7 +1127,11 @@ export function AuthorityDashboard() {
                   </div>
                   <div class="alert-detail-item">
                     <span class="alert-detail-icon">📍</span>
-                    <span>${inc.location?.city || 'Unknown'}, ${inc.location?.state || 'Unknown'}</span>
+                    <span>${inc.location?.city || inc.city || 'Unknown'}, ${inc.location?.state || inc.state || 'Unknown'}${
+                      inc.location?.lat && inc.location?.lng 
+                        ? ` (${inc.location.lat.toFixed(4)}, ${inc.location.lng.toFixed(4)})` 
+                        : ''
+                    }</span>
                   </div>
                   <div class="alert-detail-item">
                     <span class="alert-detail-icon">📞</span>
