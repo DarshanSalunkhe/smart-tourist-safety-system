@@ -1285,12 +1285,19 @@ export function AuthorityDashboard() {
         </div>
         
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; padding: 1rem 0;">
-          ${users.length > 0 ? users.map(u => `
+          ${users.length > 0 ? users.map(u => {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const photoUrl = u.profile_photo ? `${API_URL}${u.profile_photo}` : null;
+            
+            return `
             <div class="tourist-card" style="background: var(--bg); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s;" onclick="window.viewTouristProfile('${u.id}')">
               <div style="display: flex; align-items: start; gap: 1rem;">
-                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; flex-shrink: 0;">
-                  👤
-                </div>
+                ${photoUrl 
+                  ? `<img src="${photoUrl}" alt="${u.name}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--primary);" />`
+                  : `<div style="width: 60px; height: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; flex-shrink: 0;">
+                    👤
+                  </div>`
+                }
                 <div style="flex: 1; min-width: 0;">
                   <h4 style="margin: 0 0 0.5rem 0; font-size: 1.1rem;">${u.name}</h4>
                   <p style="margin: 0; font-size: 0.85rem; color: var(--text-light); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
@@ -1311,7 +1318,8 @@ export function AuthorityDashboard() {
                 View Profile
               </button>
             </div>
-          `).join('') : `
+          `;
+          }).join('') : `
             <div style="grid-column: 1/-1; text-align: center; padding: 3rem;">
               <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
               <h3 style="margin-bottom: 0.5rem; color: var(--text);">No Tourists Registered</h3>
@@ -1367,9 +1375,12 @@ export function AuthorityDashboard() {
         
         <div style="padding: 2rem;">
           <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 3rem; color: white; margin-bottom: 1rem;">
-              👤
-            </div>
+            ${tourist.profile_photo 
+              ? `<img src="${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${tourist.profile_photo}" alt="${tourist.name}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid var(--primary);" />`
+              : `<div style="width: 100px; height: 100px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 3rem; color: white; margin-bottom: 1rem;">
+                👤
+              </div>`
+            }
             <h3 style="margin: 0.5rem 0;">${tourist.name}</h3>
             <span style="background: var(--success); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.85rem;">
               ✓ Verified

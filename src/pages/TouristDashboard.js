@@ -801,23 +801,25 @@ export function TouristDashboard() {
   }
 
   function getProfileView() {
+    // Always get fresh user data from localStorage to ensure profile photo is up-to-date
+    const currentUser = JSON.parse(localStorage.getItem('user')) || user;
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const photoUrl = user.profile_photo 
-      ? `${API_URL}${user.profile_photo}` 
+    const photoUrl = currentUser.profile_photo 
+      ? `${API_URL}${currentUser.profile_photo}` 
       : 'https://via.placeholder.com/150?text=No+Photo';
     
     return `
       <div class="card">
         <div class="digital-id">
           <h2>🆔 ${i18n.t('digital_id')}</h2>
-          <p style="font-size: 1.1rem; font-weight: 600;">${user.name}</p>
+          <p style="font-size: 1.1rem; font-weight: 600;">${currentUser.name}</p>
           <div class="qr-code" id="qrCode"></div>
           <div class="blockchain-badge">
             <span>🔗</span>
             <span>${i18n.t('blockchain_verified')}</span>
           </div>
           <p style="font-size: 0.9rem; margin-top: 1rem;">
-            ${i18n.t('blockchain_id')}: <code>${user.blockchainId}</code>
+            ${i18n.t('blockchain_id')}: <code>${currentUser.blockchainId}</code>
           </p>
         </div>
       </div>
@@ -853,7 +855,7 @@ export function TouristDashboard() {
                   accept="image/*" 
                   style="display: none;"
                 />
-                ${user.profile_photo ? '<button id="deletePhotoBtn" class="btn btn-danger btn-sm">🗑️ Remove</button>' : ''}
+                ${currentUser.profile_photo ? '<button id="deletePhotoBtn" class="btn btn-danger btn-sm">🗑️ Remove</button>' : ''}
               </div>
               <div id="photoUploadMsg" style="font-size: 0.85rem; display: none;"></div>
             </div>
@@ -865,7 +867,7 @@ export function TouristDashboard() {
               ${i18n.t('name')}
             </label>
             <div style="padding: 0.6rem 0.75rem; background: var(--bg); border-radius: 0.4rem; border: 1px solid var(--border);">
-              ${user.name}
+              ${currentUser.name}
             </div>
           </div>
 
@@ -874,7 +876,7 @@ export function TouristDashboard() {
               ${i18n.t('email')}
             </label>
             <div style="padding: 0.6rem 0.75rem; background: var(--bg); border-radius: 0.4rem; border: 1px solid var(--border);">
-              ${user.email}
+              ${currentUser.email}
             </div>
           </div>
 
@@ -884,13 +886,13 @@ export function TouristDashboard() {
               ${i18n.t('phone')}
             </label>
             <div id="profilePhoneDisplay" style="padding: 0.6rem 0.75rem; background: var(--bg); border-radius: 0.4rem; border: 1px solid var(--border);">
-              ${user.phone || '—'}
+              ${currentUser.phone || '—'}
             </div>
             <input
               type="tel"
               id="profilePhone"
               class="form-control"
-              value="${user.phone || ''}"
+              value="${currentUser.phone || ''}"
               placeholder="+91-XXXXXXXXXX"
               style="display: none;"
             />
@@ -901,13 +903,13 @@ export function TouristDashboard() {
               ${i18n.t('emergency_contact')}
             </label>
             <div id="profileEmergencyDisplay" style="padding: 0.6rem 0.75rem; background: var(--bg); border-radius: 0.4rem; border: 1px solid var(--border);">
-              ${user.emergencyContact || '—'}
+              ${currentUser.emergencyContact || '—'}
             </div>
             <input
               type="tel"
               id="profileEmergency"
               class="form-control"
-              value="${user.emergencyContact || ''}"
+              value="${currentUser.emergencyContact || ''}"
               placeholder="+91-XXXXXXXXXX"
               style="display: none;"
             />
@@ -995,8 +997,14 @@ export function TouristDashboard() {
           }
           
           const data = await res.json();
+          
+          // Update user object in localStorage
           user.profile_photo = data.path;
           localStorage.setItem('user', JSON.stringify(user));
+          
+          // Update the preview immediately
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+          photoPreview.src = `${API_URL}${data.path}`;
           
           showPhotoMsg('✅ Photo uploaded successfully!', 'var(--success)');
           setTimeout(() => photoMsg.style.display = 'none', 3000);
@@ -1065,9 +1073,10 @@ export function TouristDashboard() {
 
     editBtn.addEventListener('click', enterEditMode);
     cancelBtn.addEventListener('click', () => {
-      // Reset inputs to current user values
-      phoneInput.value     = user.phone || '';
-      emergencyInput.value = user.emergencyContact || '';
+      // Reset inputs to current user values from localStorage
+      const currentUser = JSON.parse(localStorage.getItem('user')) || user;
+      phoneInput.value     = currentUser.phone || '';
+      emergencyInput.value = currentUser.emergencyContact || '';
       exitEditMode();
     });
 
