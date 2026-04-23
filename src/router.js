@@ -5,6 +5,7 @@ import { RoleSelectionPage } from './pages/RoleSelectionPage.js';
 import { TouristDashboard } from './pages/TouristDashboard.js';
 import { AuthorityDashboard } from './pages/AuthorityDashboard.js';
 import { AdminDashboard } from './pages/AdminDashboard.js';
+import { IncidentResponseCenter } from './pages/IncidentResponseCenter.js';
 import { authAPIService } from './services/auth-api.js';
 
 const routes = {
@@ -52,6 +53,18 @@ export function initRouter(app) {
       const hash = window.location.hash.slice(1) || '/';
       console.log('🗺️ Navigating to:', hash);
       
+      // Check for dynamic routes (e.g., /authority/incident/:id)
+      let route = routes[hash];
+      let routeParams = null;
+      
+      // Handle /authority/incident/:incidentId route
+      if (hash.startsWith('/authority/incident/')) {
+        const incidentId = hash.split('/')[3];
+        console.log('📋 Loading incident:', incidentId);
+        route = () => IncidentResponseCenter(incidentId);
+        routeParams = { incidentId };
+      }
+      
       // Extract OAuth tokens from URL if present
       const urlParams = new URLSearchParams(hash.split('?')[1]);
       const token = urlParams.get('token');
@@ -90,7 +103,10 @@ export function initRouter(app) {
         cleanupCurrentPage();
       }
       
-      const route = routes[hash] || routes['/'];
+      // Use dynamic route if found, otherwise use static routes
+      if (!route) {
+        route = routes[hash] || routes['/'];
+      }
       
       if (!route) {
         console.error('❌ Route not found:', hash);
@@ -107,7 +123,7 @@ export function initRouter(app) {
       // Users can manually navigate to their dashboard from the landing page
       
       // Redirect to landing if trying to access protected route without authentication
-      if (!user && !publicRoutes.includes(hash)) {
+      if (!user && !publicRoutes.includes(hash) && !hash.startsWith('/authority/incident/')) {
         console.log('🔒 Protected route, redirecting to landing...');
         window.location.hash = '#/';
         return;

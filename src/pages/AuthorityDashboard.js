@@ -1473,15 +1473,13 @@ export function AuthorityDashboard() {
   }
 
   function setupAlertHandlers() {
-    // Start Progress button
+    // Start Progress button - Navigate to Incident Response Center
     document.querySelectorAll('.start-progress-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = e.target.dataset.id;
-        const success = incidentService.changeStatus(id, 'in-progress', user.name);
-        if (success) {
-          showNotification('Incident status updated to In Progress', 'success');
-          updateMainContent('alerts');
-        }
+        console.log('[AuthorityDashboard] Opening Incident Response Center for:', id);
+        // Navigate to the incident response center page
+        window.location.hash = `#/authority/incident/${id}`;
       });
     });
 
