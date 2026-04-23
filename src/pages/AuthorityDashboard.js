@@ -22,6 +22,7 @@ export function AuthorityDashboard() {
   let analyticsData = null; // Cache analytics data
 
   setTimeout(() => {
+    console.log('[AuthorityDashboard] Initializing dashboard...');
     initializeSocketIO();
     initializeMap();
     setupNavigation();
@@ -33,7 +34,7 @@ export function AuthorityDashboard() {
     fetchUsers(); // Fetch users on load
     fetchIncidents(); // Fetch incidents on load
     fetchAnalytics(); // Fetch analytics on load
-  }, 0);
+  }, 100); // Increased timeout to ensure DOM is ready
   
   async function fetchAnalytics() {
     try {
@@ -436,14 +437,29 @@ export function AuthorityDashboard() {
 
 
   function setupNavigation() {
-    document.querySelectorAll('.nav-item').forEach(item => {
+    console.log('[AuthorityDashboard] Setting up navigation...');
+    const navItems = document.querySelectorAll('.nav-item');
+    console.log('[AuthorityDashboard] Found nav items:', navItems.length);
+    
+    if (navItems.length === 0) {
+      console.warn('[AuthorityDashboard] No nav items found, retrying in 100ms...');
+      setTimeout(setupNavigation, 100);
+      return;
+    }
+    
+    navItems.forEach(item => {
       item.addEventListener('click', (e) => {
         e.preventDefault();
         // Get the nav-item element, even if a child was clicked
         const navItem = e.currentTarget;
         const view = navItem.dataset.view;
         
-        if (!view) return;
+        console.log('[AuthorityDashboard] Nav item clicked:', view);
+        
+        if (!view) {
+          console.warn('[AuthorityDashboard] No view data attribute found');
+          return;
+        }
         
         currentView = view;
         
@@ -453,6 +469,8 @@ export function AuthorityDashboard() {
         updateMainContent(view);
       });
     });
+    
+    console.log('[AuthorityDashboard] Navigation setup complete');
   }
 
   function handleLocationChange(stateId, cityId) {
