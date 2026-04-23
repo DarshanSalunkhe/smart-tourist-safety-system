@@ -867,97 +867,360 @@ export function AuthorityDashboard() {
         filteredUsers.some(u => u.id === inc.user_id)
       );
     }
+    
+    // Sort by priority: critical first, then by timestamp
+    incidents.sort((a, b) => {
+      const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+      const aPriority = severityOrder[a.severity] || 4;
+      const bPriority = severityOrder[b.severity] || 4;
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
 
     return `
+      <style>
+        .enhanced-alert-card {
+          background: var(--card);
+          border-radius: var(--r-lg);
+          padding: 1.25rem;
+          margin-bottom: 1rem;
+          border-left: 4px solid;
+          box-shadow: var(--shadow-card);
+          transition: all var(--t);
+          position: relative;
+          overflow: hidden;
+        }
+        .enhanced-alert-card:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+        }
+        .enhanced-alert-card.critical {
+          border-left-color: #ef4444;
+          background: linear-gradient(to right, rgba(239, 68, 68, 0.05), var(--card));
+          animation: criticalPulse 2s ease-in-out infinite;
+        }
+        .enhanced-alert-card.high {
+          border-left-color: #f59e0b;
+          background: linear-gradient(to right, rgba(245, 158, 11, 0.05), var(--card));
+        }
+        .enhanced-alert-card.medium {
+          border-left-color: #fbbf24;
+        }
+        .enhanced-alert-card.low {
+          border-left-color: #10b981;
+        }
+        @keyframes criticalPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+          50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        }
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        .alert-slide-in {
+          animation: slideIn 0.4s ease-out;
+        }
+        .alert-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 0.75rem;
+        }
+        .alert-type-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.35rem 0.75rem;
+          border-radius: var(--r-full);
+          font-size: 0.8rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .alert-severity-badge {
+          padding: 0.25rem 0.65rem;
+          border-radius: var(--r-full);
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          color: white;
+        }
+        .alert-details {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+        }
+        .alert-detail-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.85rem;
+        }
+        .alert-detail-icon {
+          font-size: 1rem;
+          opacity: 0.7;
+        }
+        .alert-actions {
+          display: flex;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+        .alert-action-btn {
+          padding: 0.5rem 1rem;
+          border-radius: var(--r);
+          border: none;
+          font-size: 0.8rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all var(--t);
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          font-family: inherit;
+        }
+        .alert-action-btn.primary {
+          background: linear-gradient(135deg, var(--primary), #6366f1);
+          color: white;
+          box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+        .alert-action-btn.success {
+          background: linear-gradient(135deg, var(--success), #34d399);
+          color: white;
+          box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+        }
+        .alert-action-btn.danger {
+          background: linear-gradient(135deg, var(--danger), #f87171);
+          color: white;
+          box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+        }
+        .alert-action-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .alert-filters {
+          display: flex;
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+        .filter-label {
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: var(--text-light);
+        }
+        .priority-score {
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          background: linear-gradient(135deg, #8b5cf6, #6366f1);
+          color: white;
+          padding: 0.35rem 0.75rem;
+          border-radius: var(--r-full);
+          font-size: 0.75rem;
+          font-weight: 700;
+          box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        }
+      </style>
+
       ${_kpiStrip(incidents, cachedUsers)}
+      
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">🚨 ${i18n.t('real_time_feed')}</h3>
-          <button class="btn btn-primary" onclick="location.reload()">${i18n.t('refresh')}</button>
+          <h3 class="card-title">🚨 Live Alerts</h3>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="badge badge-danger">${incidents.filter(i => i.status !== 'resolved').length} Active</span>
+            <button class="btn btn-primary" onclick="location.reload()">🔄 Refresh</button>
+          </div>
         </div>
         
-        ${createLocationFilter({
-          selectedState,
-          selectedCity,
-          inline: true,
-          showLabel: true
-        })}
+        <!-- Filters -->
+        <div style="padding: 1rem 1.35rem; background: var(--bg); border-bottom: 1px solid var(--border);">
+          <div class="alert-filters">
+            <span class="filter-label">🔍 Filter by:</span>
+            
+            <select id="severityFilter" class="form-control" style="width: auto; min-width: 120px;">
+              <option value="all">All Severity</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            
+            <select id="typeFilter" class="form-control" style="width: auto; min-width: 120px;">
+              <option value="all">All Types</option>
+              <option value="sos">SOS</option>
+              <option value="theft">Theft</option>
+              <option value="harassment">Harassment</option>
+              <option value="lost">Lost</option>
+              <option value="medical">Medical</option>
+            </select>
+            
+            <select id="statusFilter" class="form-control" style="width: auto; min-width: 120px;">
+              <option value="all">All Status</option>
+              <option value="new">New</option>
+              <option value="in-progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+        </div>
         
-        <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
-            <thead>
-              <tr style="background: var(--bg); border-bottom: 2px solid var(--border);">
-                <th style="padding: 0.75rem; text-align: left;">Incident ID</th>
-                <th style="padding: 0.75rem; text-align: left;">Type</th>
-                <th style="padding: 0.75rem; text-align: left;">Severity</th>
-                <th style="padding: 0.75rem; text-align: left;">Status</th>
-                <th style="padding: 0.75rem; text-align: left;">Tourist Name</th>
-                <th style="padding: 0.75rem; text-align: left;">Timestamp</th>
-                <th style="padding: 0.75rem; text-align: left;">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${incidents.length > 0 ? incidents.map(inc => `
-                <tr style="border-bottom: 1px solid var(--border); ${inc.severity === 'critical' ? 'background: rgba(239, 68, 68, 0.05);' : ''}">
-                  <td style="padding: 0.75rem;">
-                    <code style="font-size: 0.85rem;">${inc.id.substring(0, 8)}...</code>
-                  </td>
-                  <td style="padding: 0.75rem;">
-                    <strong>${inc.type.toUpperCase()}</strong>
-                  </td>
-                  <td style="padding: 0.75rem;">
-                    <span class="badge badge-${inc.status === 'new' ? 'danger' : inc.status === 'in-progress' ? 'warning' : 'success'}" style="padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.85rem; background: ${
-                      inc.severity === 'critical' ? '#ef4444' : 
-                      inc.severity === 'high' ? '#f59e0b' : 
-                      inc.severity === 'medium' ? '#fbbf24' : '#10b981'
-                    }; color: white;">
-                      ${inc.severity}
+        <!-- Alert Cards -->
+        <div id="alertsContainer" style="padding: 1.35rem;">
+          ${incidents.length > 0 ? incidents.map((inc, index) => {
+            const user = cachedUsers.find(u => u.id === inc.user_id);
+            const severityColors = {
+              critical: { bg: '#ef4444', text: 'white', icon: '🚨' },
+              high: { bg: '#f59e0b', text: 'white', icon: '⚠️' },
+              medium: { bg: '#fbbf24', text: 'white', icon: '⚡' },
+              low: { bg: '#10b981', text: 'white', icon: '✓' }
+            };
+            const color = severityColors[inc.severity] || severityColors.low;
+            
+            // Calculate AI priority score
+            const priorityScore = calculatePriorityScore(inc, user);
+            
+            return `
+              <div class="enhanced-alert-card alert-slide-in ${inc.severity}" 
+                   data-severity="${inc.severity}" 
+                   data-type="${inc.type}" 
+                   data-status="${inc.status}"
+                   style="animation-delay: ${index * 0.05}s;">
+                
+                ${priorityScore >= 80 ? `<div class="priority-score">🔥 Priority: ${priorityScore}</div>` : ''}
+                
+                <div class="alert-header">
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span class="alert-type-badge" style="background: ${color.bg}; color: ${color.text};">
+                      ${color.icon} ${inc.type.toUpperCase()}
                     </span>
-                  </td>
-                  <td style="padding: 0.75rem;">
-                    <span class="badge badge-${inc.status === 'new' ? 'danger' : inc.status === 'in-progress' ? 'warning' : 'success'}" style="padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.85rem;">
+                    <span class="alert-severity-badge" style="background: ${color.bg};">
+                      ${inc.severity.toUpperCase()}
+                    </span>
+                  </div>
+                  <span style="font-size: 0.75rem; color: var(--text-light); font-weight: 600;">
+                    ${formatToIST(inc.created_at)}
+                  </span>
+                </div>
+                
+                <div class="alert-details">
+                  <div class="alert-detail-item">
+                    <span class="alert-detail-icon">👤</span>
+                    <strong>${user?.name || inc.user_name || 'Unknown Tourist'}</strong>
+                  </div>
+                  <div class="alert-detail-item">
+                    <span class="alert-detail-icon">📍</span>
+                    <span>${inc.location?.city || 'Unknown'}, ${inc.location?.state || 'Unknown'}</span>
+                  </div>
+                  <div class="alert-detail-item">
+                    <span class="alert-detail-icon">📞</span>
+                    <span>${user?.phone || 'N/A'}</span>
+                  </div>
+                  <div class="alert-detail-item">
+                    <span class="alert-detail-icon">🏷️</span>
+                    <span class="badge badge-${inc.status === 'new' ? 'danger' : inc.status === 'in-progress' ? 'warning' : 'success'}" style="font-size: 0.75rem;">
                       ${inc.status.toUpperCase().replace('-', ' ')}
                     </span>
-                  </td>
-                  <td style="padding: 0.75rem;">${inc.user_name || 'Unknown'}</td>
-                  <td style="padding: 0.75rem;">
-                    <small>${formatToIST(inc.created_at)}</small>
-                  </td>
-                  <td style="padding: 0.75rem;">
-                    <div style="display: flex; gap: 0.5rem;">
-                      ${inc.status === 'new' ? `
-                        <button class="btn btn-success start-progress-btn" data-id="${inc.id}" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-                          ${i18n.t('start_progress')}
-                        </button>
-                      ` : ''}
-                      ${inc.status === 'in-progress' ? `
-                        <button class="btn btn-primary resolve-btn" data-id="${inc.id}" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-                          ${i18n.t('resolve')}
-                        </button>
-                      ` : ''}
-                      ${inc.status === 'resolved' ? `
-                        <span style="color: var(--success); font-weight: bold;">✓ ${i18n.t('resolved')}</span>
-                      ` : ''}
-                    </div>
-                    ${inc.dispatchSuggestions?.length ? `
-                      <div style="margin-top:.5rem;font-size:.75rem;color:var(--text-light);">
-                        <div style="font-weight:600;margin-bottom:.2rem;">🚔 Suggested:</div>
-                        ${inc.dispatchSuggestions.map(s => `<div>${s}</div>`).join('')}
-                      </div>` : ''}
-                  </td>
-                </tr>
-              `).join('') : `
-                <tr>
-                  <td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-light);">
-                    ${i18n.t('no_data')}
-                  </td>
-                </tr>
-              `}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+                
+                ${inc.description ? `
+                  <div style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg); border-radius: var(--r); font-size: 0.85rem; color: var(--text-light);">
+                    💬 ${inc.description}
+                  </div>
+                ` : ''}
+                
+                <div class="alert-actions">
+                  <button class="alert-action-btn primary start-progress-btn" data-id="${inc.id}">
+                    📋 View Details
+                  </button>
+                  ${user?.phone ? `
+                    <button class="alert-action-btn success call-tourist-btn" data-phone="${user.phone}">
+                      📞 Call Tourist
+                    </button>
+                  ` : ''}
+                  <button class="alert-action-btn primary view-map-btn" data-lat="${inc.location?.lat}" data-lng="${inc.location?.lng}">
+                    🗺️ View on Map
+                  </button>
+                  ${inc.status !== 'resolved' ? `
+                    <button class="alert-action-btn danger resolve-alert-btn" data-id="${inc.id}">
+                      ✓ Resolve
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }).join('') : `
+            <div style="text-align: center; padding: 3rem; color: var(--text-light);">
+              <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+              <h3>No Active Alerts</h3>
+              <p>All incidents have been resolved or there are no incidents to display.</p>
+            </div>
+          `}
         </div>
       </div>
     `;
+  }
+  
+  // Calculate AI-based priority score
+  function calculatePriorityScore(incident, user) {
+    let score = 0;
+    
+    // Severity weight (40 points)
+    const severityScores = { critical: 40, high: 30, medium: 20, low: 10 };
+    score += severityScores[incident.severity] || 0;
+    
+    // Time factor (20 points) - newer incidents get higher priority
+    const ageMinutes = (Date.now() - new Date(incident.created_at)) / (1000 * 60);
+    if (ageMinutes < 5) score += 20;
+    else if (ageMinutes < 15) score += 15;
+    else if (ageMinutes < 30) score += 10;
+    else score += 5;
+    
+    // Type factor (20 points)
+    const typeScores = { sos: 20, medical: 18, harassment: 15, theft: 12, lost: 10 };
+    score += typeScores[incident.type] || 10;
+    
+    // Status factor (10 points)
+    if (incident.status === 'new') score += 10;
+    else if (incident.status === 'in-progress') score += 5;
+    
+    // Location risk (10 points) - check if in high-risk zone
+    const zones = JSON.parse(localStorage.getItem('riskZones') || '[]');
+    const inHighRiskZone = zones.some(zone => {
+      if (zone.risk === 'critical' || zone.risk === 'high') {
+        const distance = calculateDistance(
+          incident.location?.lat, incident.location?.lng,
+          zone.lat, zone.lng
+        );
+        return distance <= zone.radius;
+      }
+      return false;
+    });
+    if (inHighRiskZone) score += 10;
+    
+    return Math.min(score, 100);
+  }
+  
+  function calculateDistance(lat1, lon1, lat2, lon2) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+    const R = 6371e3; // Earth radius in meters
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   }
 
   function getTouristsView() {
@@ -1482,6 +1745,48 @@ export function AuthorityDashboard() {
         window.location.hash = `#/authority/incident/${id}`;
       });
     });
+    
+    // Call Tourist button
+    document.querySelectorAll('.call-tourist-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const phone = e.target.dataset.phone;
+        if (phone) {
+          window.location.href = `tel:${phone}`;
+        }
+      });
+    });
+    
+    // View on Map button
+    document.querySelectorAll('.view-map-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const lat = e.target.dataset.lat;
+        const lng = e.target.dataset.lng;
+        if (lat && lng) {
+          window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        } else {
+          showNotification('Location not available', 'warning');
+        }
+      });
+    });
+    
+    // Resolve Alert button
+    document.querySelectorAll('.resolve-alert-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.dataset.id;
+        if (confirm('Mark this alert as resolved?')) {
+          try {
+            const success = incidentService.changeStatus(id, 'resolved', user.name);
+            if (success) {
+              showNotification('Alert resolved successfully', 'success');
+              playAlertSound('success');
+              setTimeout(() => updateMainContent('alerts'), 500);
+            }
+          } catch (error) {
+            showNotification('Failed to resolve alert', 'error');
+          }
+        }
+      });
+    });
 
     // Respond button - add notes
     document.querySelectorAll('.respond-btn').forEach(btn => {
@@ -1512,6 +1817,105 @@ export function AuthorityDashboard() {
         }
       });
     });
+    
+    // Setup filters
+    setupAlertFilters();
+    
+    // Check for new critical alerts and play sound
+    checkForNewCriticalAlerts();
+  }
+  
+  function setupAlertFilters() {
+    const severityFilter = document.getElementById('severityFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    
+    const applyFilters = () => {
+      const severity = severityFilter?.value || 'all';
+      const type = typeFilter?.value || 'all';
+      const status = statusFilter?.value || 'all';
+      
+      document.querySelectorAll('.enhanced-alert-card').forEach(card => {
+        const cardSeverity = card.dataset.severity;
+        const cardType = card.dataset.type;
+        const cardStatus = card.dataset.status;
+        
+        const matchesSeverity = severity === 'all' || cardSeverity === severity;
+        const matchesType = type === 'all' || cardType === type;
+        const matchesStatus = status === 'all' || cardStatus === status;
+        
+        if (matchesSeverity && matchesType && matchesStatus) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    };
+    
+    severityFilter?.addEventListener('change', applyFilters);
+    typeFilter?.addEventListener('change', applyFilters);
+    statusFilter?.addEventListener('change', applyFilters);
+  }
+  
+  function checkForNewCriticalAlerts() {
+    const incidents = incidentService.getIncidents();
+    const criticalAlerts = incidents.filter(inc => 
+      inc.severity === 'critical' && inc.status === 'new'
+    );
+    
+    // Check if there are new critical alerts since last check
+    const lastCheckKey = 'lastCriticalAlertCheck';
+    const lastCheck = localStorage.getItem(lastCheckKey);
+    const currentIds = criticalAlerts.map(a => a.id).join(',');
+    
+    if (lastCheck !== currentIds && criticalAlerts.length > 0) {
+      playAlertSound('critical');
+      localStorage.setItem(lastCheckKey, currentIds);
+    }
+  }
+  
+  function playAlertSound(type = 'critical') {
+    try {
+      // Create audio context for alert sound
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      if (type === 'critical') {
+        // Critical alert: urgent beeping sound
+        oscillator.frequency.value = 880; // A5 note
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+        
+        // Second beep
+        setTimeout(() => {
+          const osc2 = audioContext.createOscillator();
+          const gain2 = audioContext.createGain();
+          osc2.connect(gain2);
+          gain2.connect(audioContext.destination);
+          osc2.frequency.value = 880;
+          gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+          osc2.start(audioContext.currentTime);
+          osc2.stop(audioContext.currentTime + 0.3);
+        }, 400);
+      } else if (type === 'success') {
+        // Success sound: pleasant chime
+        oscillator.frequency.value = 523; // C5 note
+        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+      }
+    } catch (error) {
+      console.warn('[AuthorityDashboard] Could not play alert sound:', error);
+    }
   }
 
   function getSettingsView() {
