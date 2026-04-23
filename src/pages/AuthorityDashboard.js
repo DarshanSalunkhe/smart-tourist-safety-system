@@ -429,11 +429,17 @@ export function AuthorityDashboard() {
   function setupNavigation() {
     document.querySelectorAll('.nav-item').forEach(item => {
       item.addEventListener('click', (e) => {
-        const view = e.target.dataset.view;
+        e.preventDefault();
+        // Get the nav-item element, even if a child was clicked
+        const navItem = e.currentTarget;
+        const view = navItem.dataset.view;
+        
+        if (!view) return;
+        
         currentView = view;
         
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        e.target.classList.add('active');
+        navItem.classList.add('active');
         
         updateMainContent(view);
       });
