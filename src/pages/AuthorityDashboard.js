@@ -73,6 +73,7 @@ export function AuthorityDashboard() {
   
   async function fetchUsers() {
     try {
+      console.log('[AuthorityDashboard] Fetching users from:', `${API_URL}/api/users`);
       const response = await fetch(`${API_URL}/api/users`, {
         credentials: 'include'
       });
@@ -80,18 +81,26 @@ export function AuthorityDashboard() {
       if (response.ok) {
         const data = await response.json();
         cachedUsers = data.users || [];
-        console.log('[AuthorityDashboard] Users fetched from API:', cachedUsers.length);
+        console.log('[AuthorityDashboard] ✅ Users fetched from API:', cachedUsers.length);
         console.log('[AuthorityDashboard] User details:', cachedUsers.map(u => ({ id: u.id, email: u.email, role: u.role })));
+        
+        // Update current view if on tourists view
+        if (currentView === 'tourists') {
+          updateMainContent('tourists');
+        }
         
         // Update map if on map view
         if (currentView === 'map') {
           initializeMap();
         }
       } else {
-        console.error('[AuthorityDashboard] Failed to fetch users:', response.status);
+        const errorText = await response.text();
+        console.error('[AuthorityDashboard] ❌ Failed to fetch users:', response.status, errorText);
+        showNotification(`Failed to load users: ${response.status}`, 'error');
       }
     } catch (error) {
-      console.error('[AuthorityDashboard] Error fetching users:', error);
+      console.error('[AuthorityDashboard] ❌ Error fetching users:', error);
+      showNotification('Failed to connect to server', 'error');
     }
   }
   
@@ -1260,10 +1269,10 @@ export function AuthorityDashboard() {
                 <div style="flex: 1; min-width: 0;">
                   <h4 style="margin: 0 0 0.5rem 0; font-size: 1.1rem;">${u.name}</h4>
                   <p style="margin: 0; font-size: 0.85rem; color: var(--text-light); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    <strong>ID:</strong> ${u.blockchainId}
+                    <strong>ID:</strong> ${u.blockchain_id || u.blockchainId || 'N/A'}
                   </p>
                   <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--text-light);">
-                    <strong>Phone:</strong> ${u.phone}
+                    <strong>Phone:</strong> ${u.phone || 'N/A'}
                   </p>
                   <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; align-items: center;">
                     <span style="background: var(--success); color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
@@ -1277,7 +1286,17 @@ export function AuthorityDashboard() {
                 View Profile
               </button>
             </div>
-          `).join('') : `<p style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-light);">No tourists registered</p>`}
+          `).join('') : `
+            <div style="grid-column: 1/-1; text-align: center; padding: 3rem;">
+              <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
+              <h3 style="margin-bottom: 0.5rem; color: var(--text);">No Tourists Registered</h3>
+              <p style="color: var(--text-light); margin: 0;">
+                ${cachedUsers.length === 0 
+                  ? 'Failed to load users from server. Check console for errors or try refreshing the page.' 
+                  : 'No tourists have registered yet. Tourist accounts will appear here once they sign up.'}
+              </p>
+            </div>
+          `}
         </div>
       </div>
     `;
