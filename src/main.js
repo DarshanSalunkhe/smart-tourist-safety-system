@@ -1,11 +1,13 @@
 import { initRouter, renderCurrentRoute } from './router.js';
 import { authService } from './services/auth.js';
 import { i18n } from './services/i18n.js';
+import { themeService } from './services/theme.js';
 import { initializeDemoData } from './services/demo-data.js';
 
 console.log('🚀 Smart Tourist Safety System - Starting...');
 
 // Apply saved theme immediately to prevent flash
+// Theme will be user-specific after login, but we need a default now
 const savedTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 

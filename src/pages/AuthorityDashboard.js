@@ -1,6 +1,7 @@
 import { authAPIService } from '../services/auth-api.js';
 import { incidentService } from '../services/incident.js';
 import { i18n } from '../services/i18n.js';
+import { themeService } from '../services/theme.js';
 import { locationDataService } from '../services/location-data.js';
 import { createLocationFilter, setupLocationFilterHandlers } from '../components/LocationFilter.js';
 import { formatToIST, formatTimeIST } from '../utils/time.js';
@@ -1988,7 +1989,7 @@ export function AuthorityDashboard() {
   }
 
   function getSettingsView() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const isDark = themeService.isDark();
     return `
       <div class="card">
         <div class="card-header">
@@ -2054,8 +2055,7 @@ export function AuthorityDashboard() {
     const darkModeCheck = document.getElementById('darkModeCheck');
     if (darkModeCheck) {
       darkModeCheck.addEventListener('change', (e) => {
-        document.documentElement.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
-        localStorage.setItem('theme', e.target.checked ? 'dark' : 'light');
+        themeService.setTheme(e.target.checked ? 'dark' : 'light');
         showNotification(`${e.target.checked ? 'Dark' : 'Light'} mode enabled`, 'success');
       });
     }

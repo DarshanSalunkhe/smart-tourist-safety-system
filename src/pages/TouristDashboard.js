@@ -2,6 +2,7 @@ import { authAPIService } from '../services/auth-api.js';
 import { locationService } from '../services/location.js';
 import { incidentService } from '../services/incident.js';
 import { i18n, LANGUAGE_OPTIONS } from '../services/i18n.js';
+import { themeService } from '../services/theme.js';
 import { locationDataService } from '../services/location-data.js';
 import { createLocationFilter, setupLocationFilterHandlers } from '../components/LocationFilter.js';
 import { formatToIST, formatTimeIST } from '../utils/time.js';
@@ -608,8 +609,7 @@ export function TouristDashboard() {
     if (darkCheck) {
       darkCheck.addEventListener('change', (e) => {
         const theme = e.target.checked ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
+        themeService.setTheme(theme);
         console.log('[TouristDashboard] Theme changed to:', theme);
       });
     }
@@ -1296,7 +1296,7 @@ export function TouristDashboard() {
   }
 
   function getSettingsView() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const isDark = themeService.isDark();
     return `
       <div class="card">
         <div class="card-header">

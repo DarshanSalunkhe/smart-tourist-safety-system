@@ -1,5 +1,6 @@
 // API-based authentication service with JWT + session support
 import { i18n } from './i18n.js';
+import { themeService } from './theme.js';
 
 const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5000';
 
@@ -70,8 +71,9 @@ class AuthAPIService {
         if (data.user) {
           this.currentUser = data.user;
           localStorage.setItem('user', JSON.stringify(data.user));
-          // Set user ID for language preferences
+          // Set user ID for language and theme preferences
           i18n.setUserId(data.user.id);
+          themeService.setUserId(data.user.id);
         }
       }
     } catch {
@@ -133,8 +135,9 @@ class AuthAPIService {
                 const userData = await authResponse.json();
                 this.currentUser = userData.user;
                 localStorage.setItem('user', JSON.stringify(userData.user));
-                // Set user ID for language preferences
+                // Set user ID for language and theme preferences
                 i18n.setUserId(userData.user.id);
+                themeService.setUserId(userData.user.id);
                 if (userData.accessToken) saveTokens(userData.accessToken, userData.refreshToken);
                 this.isLoading = false;
                 resolve(userData.user);
@@ -181,8 +184,9 @@ class AuthAPIService {
       const data = await response.json();
       this.currentUser = data.user;
       localStorage.setItem('user', JSON.stringify(data.user));
-      // Set user ID for language preferences
+      // Set user ID for language and theme preferences
       i18n.setUserId(data.user.id);
+      themeService.setUserId(data.user.id);
       if (data.accessToken) saveTokens(data.accessToken, data.refreshToken);
       console.log('[Auth] Login successful');
       return data.user;
@@ -206,8 +210,9 @@ class AuthAPIService {
       const data = await response.json();
       this.currentUser = data.user;
       localStorage.setItem('user', JSON.stringify(data.user));
-      // Set user ID for language preferences
+      // Set user ID for language and theme preferences
       i18n.setUserId(data.user.id);
+      themeService.setUserId(data.user.id);
       if (data.accessToken) saveTokens(data.accessToken, data.refreshToken);
       console.log('[Auth] Google registration complete');
       return data.user;
@@ -233,8 +238,9 @@ class AuthAPIService {
       const data = await response.json();
       this.currentUser = data.user;
       localStorage.setItem('user', JSON.stringify(data.user));
-      // Set user ID for language preferences
+      // Set user ID for language and theme preferences
       i18n.setUserId(data.user.id);
+      themeService.setUserId(data.user.id);
       if (data.accessToken) saveTokens(data.accessToken, data.refreshToken);
       console.log('[Auth] Registration successful');
       return data.user;
@@ -257,8 +263,9 @@ class AuthAPIService {
       localStorage.removeItem('user');
       clearTokens();
       sessionStorage.clear();
-      // Clear user ID for language preferences
+      // Clear user ID for language and theme preferences
       i18n.clearUserId();
+      themeService.clearUserId();
       console.log('[Auth] Logout complete, redirecting to landing page...');
       
       // Force redirect to landing page and reload
@@ -273,9 +280,10 @@ class AuthAPIService {
       if (stored) {
         try {
           this.currentUser = JSON.parse(stored);
-          // Set user ID for language preferences on page reload
+          // Set user ID for language and theme preferences on page reload
           if (this.currentUser && this.currentUser.id) {
             i18n.setUserId(this.currentUser.id);
+            themeService.setUserId(this.currentUser.id);
           }
         } catch {
           localStorage.removeItem('user');
