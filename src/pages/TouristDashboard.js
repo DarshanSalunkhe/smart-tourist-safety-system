@@ -173,14 +173,17 @@ export function TouristDashboard() {
       
       item.addEventListener('click', (e) => {
         e.preventDefault();
-        console.log('[TouristDashboard] Nav item clicked:', view);
+        // Get the nav-item element, even if a child was clicked
+        const navItem = e.currentTarget;
+        const clickedView = navItem.dataset.view;
+        console.log('[TouristDashboard] Nav item clicked:', clickedView);
         
         // Update active state
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        item.classList.add('active');
+        navItem.classList.add('active');
         
         // Update content
-        updateMainContent(view);
+        updateMainContent(clickedView);
       });
     });
     

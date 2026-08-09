@@ -2071,15 +2071,6 @@ export function AuthorityDashboard() {
     }
   }
 
-  // Global navigation function as fallback
-  window.navigateToView = function(view) {
-    console.log('[AuthorityDashboard] Global navigate to:', view);
-    currentView = view;
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelector(`.nav-item[data-view="${view}"]`)?.classList.add('active');
-    updateMainContent(view);
-  };
-
   return `
     <div class="dashboard">
       <aside class="sidebar">
@@ -2100,19 +2091,19 @@ export function AuthorityDashboard() {
         
         <nav>
           <div class="nav-section-label">Operations</div>
-          <div class="nav-item active" data-view="map" onclick="window.navigateToView('map')" style="cursor: pointer;">
+          <div class="nav-item active" data-view="map">
             <span class="nav-item-icon">🗺️</span> ${i18n.t('live_map')}
           </div>
-          <div class="nav-item" data-view="alerts" onclick="window.navigateToView('alerts')" style="cursor: pointer;">
+          <div class="nav-item" data-view="alerts">
             <span class="nav-item-icon">🚨</span> ${i18n.t('alerts')}
           </div>
-          <div class="nav-item" data-view="tourists" onclick="window.navigateToView('tourists')" style="cursor: pointer;">
+          <div class="nav-item" data-view="tourists">
             <span class="nav-item-icon">👥</span> ${i18n.t('tourists')}
           </div>
-          <div class="nav-item" data-view="analytics" onclick="window.navigateToView('analytics')" style="cursor: pointer;">
+          <div class="nav-item" data-view="analytics">
             <span class="nav-item-icon">📊</span> ${i18n.t('analytics')}
           </div>
-          <div class="nav-item" data-view="settings" onclick="window.navigateToView('settings')" style="cursor: pointer;">
+          <div class="nav-item" data-view="settings">
             <span class="nav-item-icon">⚙️</span> ${i18n.t('settings')}
           </div>
         </nav>
