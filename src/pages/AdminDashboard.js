@@ -1,11 +1,12 @@
 import { authAPIService } from '../services/auth-api.js';
 import { incidentService } from '../services/incident.js';
 import { demoModeService } from '../services/demo-mode.js';
-import { i18n } from '../services/i18n.js';
+import { i18n, LANGUAGE_OPTIONS } from '../services/i18n.js';
 import { themeService } from '../services/theme.js';
 import { locationDataService } from '../services/location-data.js';
 import { createLocationFilter, setupLocationFilterHandlers } from '../components/LocationFilter.js';
 import { formatToIST } from '../utils/time.js';
+import { createSettingsView, setupSettingsHandlers as initializeSettings } from '../components/SettingsView.js';
 
 const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5000';
 
@@ -119,72 +120,22 @@ export function AdminDashboard() {
   // setupLogout function removed - now handled in settings view
 
   function getSettingsView() {
-    const isDark = themeService.isDark();
-    return `
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">⚙️ ${i18n.t('settings')}</h3>
-        </div>
-        <div class="card-body">
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label">🌐 ${i18n.t('language')}</div>
-              <div class="setting-desc">Choose your preferred language</div>
-            </div>
-            <select class="form-control" id="languageSelect" style="width:auto;min-width:150px;">
-              ${LANGUAGE_OPTIONS.map(l =>
-                `<option value="${l.code}" ${i18n.currentLang === l.code ? 'selected' : ''}>${l.label}</option>`
-              ).join('')}
-            </select>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label">🌙 ${i18n.t('dark_mode')}</div>
-              <div class="setting-desc">Toggle dark mode theme</div>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="darkModeCheck" ${isDark ? 'checked' : ''}>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div style="margin-top:2rem; padding-top:2rem; border-top:1px solid var(--border);">
-            <button class="btn btn-danger btn-full" id="logoutBtn">
-              🚪 ${i18n.t('logout')}
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
+    return createSettingsView(user, {
+      showNotifications: false,
+      showLocationSharing: false,
+      showVoiceCommands: false,
+      showAccountInfo: false
+    });
   }
 
   function setupSettingsHandlers() {
-    const langSelect = document.getElementById('languageSelect');
-    if (langSelect) {
-      langSelect.addEventListener('change', (e) => {
-        i18n.setLanguage(e.target.value);
-        showNotification('Language changed successfully', 'success');
-        setTimeout(() => location.reload(), 500);
-      });
-    }
-
-    const darkModeCheck = document.getElementById('darkModeCheck');
-    if (darkModeCheck) {
-      darkModeCheck.addEventListener('change', (e) => {
-        themeService.setTheme(e.target.checked ? 'dark' : 'light');
-        showNotification(`${e.target.checked ? 'Dark' : 'Light'} mode enabled`, 'success');
-      });
-    }
-
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
-        if (confirm(i18n.t('logout_confirm'))) {
-          authAPIService.logout();
-        }
-      });
-    }
+    initializeSettings(showNotification, () => {
+      if (confirm(i18n.t('logout_confirm'))) {
+        authAPIService.logout();
+      }
+    }, {
+      showNotifications: false
+    });
   }
 
   

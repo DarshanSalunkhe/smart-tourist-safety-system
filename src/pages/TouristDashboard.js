@@ -13,6 +13,7 @@ import { queueOfflineEvent, syncOfflineQueue, isOnline, getQueueLength } from '.
 import { triggerSMSFallback } from '../services/smsFallbackService.js';
 import { toast } from '../utils/notify.js';
 import { incidentsAPI } from '../services/apiClient.js';
+import { createSettingsView, setupSettingsHandlers as initializeSettings } from '../components/SettingsView.js';
 
 export function TouristDashboard() {
   const user = authAPIService.getCurrentUser();
@@ -603,85 +604,11 @@ export function TouristDashboard() {
   
   function setupSettingsHandlers() {
     console.log('[TouristDashboard] Setting up settings handlers');
-    
-    // Dark mode toggle
-    const darkCheck = document.getElementById('darkModeCheck');
-    if (darkCheck) {
-      darkCheck.addEventListener('change', (e) => {
-        const theme = e.target.checked ? 'dark' : 'light';
-        themeService.setTheme(theme);
-        console.log('[TouristDashboard] Theme changed to:', theme);
-      });
-    }
-
-    // Language selector in settings
-    const langSelect = document.getElementById('languageSelect');
-    if (langSelect) {
-      langSelect.value = i18n.currentLang;
-      langSelect.addEventListener('change', (e) => {
-        i18n.setLanguage(e.target.value); // triggers re-render, no reload
-      });
-    }
-
-    // Logout button in settings
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
-        console.log('[TouristDashboard] Settings logout button clicked');
-        handleLogout();
-      });
-    }
-    
-    // Voice commands toggle
-    const voiceCheck = document.getElementById('voiceCommandsCheck');
-    if (voiceCheck) {
-      voiceCheck.addEventListener('change', (e) => {
-        console.log('[TouristDashboard] Voice commands toggled:', e.target.checked);
-        if (e.target.checked) {
-          import('../services/voice.js').then(({ voiceService }) => {
-            const started = voiceService.start();
-            if (started) {
-              showNotification(i18n.t('voice_enabled'), 'success');
-            } else {
-              e.target.checked = false;
-              showNotification(i18n.t('voice_unsupported'), 'error');
-            }
-          });
-        } else {
-          import('../services/voice.js').then(({ voiceService }) => {
-            voiceService.stop();
-            showNotification(i18n.t('voice_disabled'), 'info');
-          });
-        }
-      });
-    }
-    
-    // Notifications toggle
-    const notifCheck = document.getElementById('notificationsCheck');
-    if (notifCheck) {
-      notifCheck.addEventListener('change', (e) => {
-        console.log('[TouristDashboard] Notifications toggled:', e.target.checked);
-        if (e.target.checked) {
-          showNotification(i18n.t('notif_enabled'), 'success');
-        } else {
-          showNotification(i18n.t('notif_disabled'), 'info');
-        }
-      });
-    }
-    
-    // Location sharing toggle
-    const shareCheck = document.getElementById('shareLocationCheck');
-    if (shareCheck) {
-      shareCheck.addEventListener('change', (e) => {
-        console.log('[TouristDashboard] Location sharing toggled:', e.target.checked);
-        if (e.target.checked) {
-          showNotification(i18n.t('location_sharing_enabled'), 'success');
-        } else {
-          showNotification(i18n.t('location_sharing_disabled'), 'info');
-        }
-      });
-    }
-    
+    initializeSettings(showNotification, handleLogout, {
+      showLocationSharing: true,
+      showNotifications: true,
+      showVoiceCommands: true
+    });
     console.log('[TouristDashboard] Settings handlers setup complete');
   }
 
@@ -1296,104 +1223,12 @@ export function TouristDashboard() {
   }
 
   function getSettingsView() {
-    const isDark = themeService.isDark();
-    return `
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title"><i class="fa-solid fa-gear"></i> ${i18n.t('settings')}</h3>
-        </div>
-        <div class="card-body">
-
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label"><i class="fa-solid fa-moon" style="color:var(--primary);margin-right:.4rem;"></i> ${i18n.t('dark_mode')}</div>
-              <div class="setting-desc">${i18n.t('dark_mode_desc')}</div>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="darkModeCheck" ${isDark ? 'checked' : ''}>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label"><i class="fa-solid fa-language" style="color:var(--info);margin-right:.4rem;"></i> ${i18n.t('language')}</div>
-              <div class="setting-desc">${i18n.t('language_desc')}</div>
-            </div>
-            <select class="form-control" id="languageSelect" style="width:auto;min-width:130px;">
-              ${LANGUAGE_OPTIONS.map(l =>
-                `<option value="${l.code}" ${i18n.currentLang === l.code ? 'selected' : ''}>${l.label}</option>`
-              ).join('')}
-            </select>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label"><i class="fa-solid fa-location-dot" style="color:var(--success);margin-right:.4rem;"></i> ${i18n.t('share_location')}</div>
-              <div class="setting-desc">${i18n.t('share_location_desc')}</div>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="shareLocationCheck" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label"><i class="fa-solid fa-bell" style="color:var(--warning);margin-right:.4rem;"></i> ${i18n.t('notifications')}</div>
-              <div class="setting-desc">${i18n.t('notifications_desc')}</div>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="notificationsCheck" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-info">
-              <div class="setting-label"><i class="fa-solid fa-microphone" style="color:var(--danger);margin-right:.4rem;"></i> ${i18n.t('voice_commands')}</div>
-              <div class="setting-desc">${i18n.t('voice_commands_desc')}</div>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="voiceCommandsCheck">
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div style="margin-top:1.5rem;">
-            <button class="btn btn-danger" id="logoutBtn" style="width:100%;">
-              <i class="fa-solid fa-right-from-bracket"></i> ${i18n.t('sign_out')}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title"><i class="fa-solid fa-circle-user"></i> ${i18n.t('account_info')}</h3>
-        </div>
-        <div class="card-body">
-          <div style="display:grid;gap:.75rem;">
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border);">
-              <span style="font-size:.82rem;color:var(--text-light);font-weight:500;">${i18n.t('name')}</span>
-              <span style="font-size:.875rem;font-weight:600;">${user.name}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border);">
-              <span style="font-size:.82rem;color:var(--text-light);font-weight:500;">${i18n.t('email')}</span>
-              <span style="font-size:.875rem;">${user.email}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--border);">
-              <span style="font-size:.82rem;color:var(--text-light);font-weight:500;">${i18n.t('role')}</span>
-              <span class="badge badge-primary">${user.role}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;">
-              <span style="font-size:.82rem;color:var(--text-light);font-weight:500;">${i18n.t('blockchain_id')}</span>
-              <code style="font-size:.78rem;background:var(--bg-2);padding:.2rem .5rem;border-radius:var(--r-sm);">${user.blockchainId}</code>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    return createSettingsView(user, {
+      showLocationSharing: true,
+      showNotifications: true,
+      showVoiceCommands: true,
+      showAccountInfo: true
+    });
   }
 
   function setupIncidentForm() {

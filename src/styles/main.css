@@ -1573,6 +1573,25 @@ tr:hover td {
 }
 
 /* -- SETTINGS TOGGLE ROW ---------------------------------- */
+.setting-section {
+  margin-bottom: 1.5rem;
+}
+.setting-section:last-child {
+  margin-bottom: 0;
+}
+.setting-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-light);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 .setting-row {
   display: flex;
   align-items: center;
